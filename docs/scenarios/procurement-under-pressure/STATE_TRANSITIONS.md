@@ -7,7 +7,7 @@
 
 ## 1. Purpose
 
-This document defines how a run evolves without allowing an LLM to improvise scenario facts or decide whether a participant chose the hidden â€œcorrectâ€ option.
+This document defines how a run evolves without allowing an LLM to improvise scenario facts or decide whether a participant chose the hidden “correct” option.
 
 It converts participant responses into auditable facts, applies deterministic transitions, releases evidence, schedules consequences, and supplies gate facts for later adjudication. It does **not** calculate participant competency. Competency remains an evidence-based post-run assessment under `SCORING.md`.
 
@@ -187,55 +187,55 @@ The table defines the principal deterministic transitions. Qualitative assessmen
 
 | Decision | Supported facts or condition | Hidden state effect | Participant-visible signal | Gate fact |
 |---|---|---|---|---|
-| D01 | bounded pilot plus owner and revision condition | `delivery +10`, `trust +5` | â€œWeek 16 is recorded as an evidence decision for a bounded cohort.â€ | none |
-| D01 | enterprise promise without bounded authority/gates | `delivery -10`, `trust -10`, `business +5` | â€œSponsor confirms the public launch expectation; scope and acceptance remain unresolved.â€ | `G1 exposure` if award action included |
-| D01 | open discovery without time-box/decision date | `delivery -10`, `business -5` | â€œSteering group asks when discovery will produce a decision.â€ | none |
-| D02 | Finance-owned hypothesis, attribution and pivot condition | `business +10`, `financial +5` | â€œBenefit claim is marked provisional pending baseline.â€ | none |
-| D02 | EUR 8m/30% recorded as verified commitment without baseline | `business -5`, `trust -5` | â€œThe headline target enters the steering baseline without an attribution method.â€ | `G6 exposure`, not failure yet |
-| D03 | request tied to uncertainty, decision, owner and useful date | relevant dimension `+5` when evidence arrives and is used | â€œEvidence request accepted; result due in week N.â€ | affects `reasonably_obtainable` |
-| D03 | duplicate or untargeted request | no positive effect; credit consumed | â€œRequest accepted, but no decision dependency is recorded.â€ | none |
-| D04 | bounded cohort/capability/authority/exclusions and exit criteria | `business +10`, `delivery +10`, `trust +5` | â€œPilot boundary accepted for planning.â€ | clears pending G1 exposure if commitments excluded |
-| D04 | broad European scope without dependency/evidence boundary | `delivery -15`, `user -5`, `trust -5` | â€œThe proposed release depends on unresolved sources, cohorts, and controls.â€ | pending G1 if material action enabled |
-| D04 | reduced scope tied to measurable workflow value | `business +5`, `delivery +10` | â€œDocument and rules value will be tested independently of recommendation.â€ | none |
-| D05 | decomposed hybrid/component architecture with fallback | `technical +10`, `trust +5`, `financial +5` | â€œTasks now have separate technologies, failure boundaries, and fallbacks.â€ | none |
-| D05 | autonomous end-to-end agent with broad tools | `technical -10`, `trust -15`, `financial -5` | â€œThe design couples extraction, judgment, and action under one failure boundary.â€ | G1/G7 exposure |
-| D05 | historical awards used as target after EV-LABEL-01 is available | `technical -10`, `data -15`, `trust -5` | â€œKnown target ambiguity remains in the recommendation design.â€ | G6 exposure; G4 later if released |
-| D06 | minimum authoritative sources, lineage, quality and fallback | `data +15`, `delivery +10` | â€œFive purpose-critical sources form the first-release data contract.â€ | none |
-| D06 | all 12 required before first value | `delivery -15`, `financial -5` | â€œIntegration breadth is now on the critical path.â€ | none |
-| D06 | upload route explicitly temporary and controlled | `delivery +5`, `data -5`, `user -5` | â€œTemporary ingestion is viable but creates reconciliation and transition work.â€ | none |
-| D06 | representativeness/label claim contradicted by available evidence | `data -15`, `trust -10` | â€œData fitness claim conflicts with profiling or label evidence.â€ | G6 exposure |
-| D07 | approved route with task evidence, controls and fallback | `technical +10`, `trust +10` | â€œApproved model route is accepted for bounded tasks.â€ | G2 pass evidence |
-| D07 | sanitized external comparison plus approved fallback | `technical +5`, `delivery +5` | â€œModel optionality is preserved without production-data exposure.â€ | G2 pass evidence |
-| D07 | production supplier data sent to unapproved endpoint | `trust -25`, `technical -10` | â€œUnapproved production-data processing is recorded as a control breach.â€ | G2 fail fact |
-| D08 | segmented metrics, severity, threshold, abstention and owner | `technical +15`, `data +10`, `trust +10` | â€œRelease acceptance is defined by task and material cohort.â€ | G3 pass evidence |
-| D08 | aggregate accuracy alone | `technical -10`, `data -10` | â€œCritical cohorts and error severity remain invisible to the release gate.â€ | G3 exposure |
-| D09 | dependency validation, thin slice and harness front-loaded | `delivery +15`, `technical +5` | â€œCritical-path evidence precedes UI completeness.â€ | none |
-| D09 | UI/agent flow first, integration later | `delivery -10`, `technical -5` | â€œVisible progress increases while the access dependency remains unresolved.â€ | G6 exposure if called ready |
-| D09 | permanent manual upload as target state | `delivery -5`, `user -10`, `data -5` | â€œManual ingestion protects timing but weakens operating fit and lineage.â€ | none |
-| D10 | balanced funded capacities plus contingency and year-one run cost | `delivery +10`, `financial +10`, `user +5` | â€œEvidence, controls, adoption, and operations have named capacity.â€ | G5 pass evidence |
-| D10 | specialist controls deferred or assigned to unauthorized lead | `delivery -10`, `trust -10`, `user -5` | â€œMaterial responsibilities lack credible capacity or authority.â€ | G5 exposure |
-| D11 | embedded evidence-led workflow with override and authority separation | `user +15`, `trust +10` | â€œBuyer review is embedded, traceable, and retains sourcing authority.â€ | G1 pass evidence |
-| D11 | separate portal or email copy path | `user -10`, `technical -5` | â€œDuplicate review and re-entry remain in the operating design.â€ | none |
-| D11 | material workflow action outside delegation | `trust -25` | â€œThe workflow enables a supplier commitment outside approved delegation.â€ | G1 fail fact |
-| D12 | unit economics, sensitivity, caching/limits and quality-aware fallback | `financial +15`, `technical +5` | â€œCost is governed per accepted comparison, with task-level controls.â€ | none |
-| D12 | one-call estimate retained after loop use is known | `financial -15`, `trust -5` | â€œThe operating forecast excludes observed reprocessing and review loops.â€ | G6 exposure |
-| D13 | human award authority plus reversible non-binding actions | `trust +15`, `business +5` | â€œAutonomy is bounded without removing workflow value.â€ | G1 pass evidence |
-| D13 | autonomous award initiation accepted | `trust -30`, `business -10` | â€œAudit logging is present, but delegation policy is breached.â€ | G1 fail fact |
-| D13 | material decision delegated to delivery team | `trust -15` | â€œNo authorized owner accepts the commercial risk.â€ | G5 fail candidate |
-| D14 | CISO concern accepted; approved task route re-evaluated/re-scoped | `trust +15`, `technical +10`, `delivery +5` | â€œThe approved route and residual risk are reconciled with scope.â€ | G2/G5 pass evidence |
-| D14 | CISO bypassed and prohibited processing continues | `trust -25`, `delivery -10` | â€œSponsor escalation did not grant model/data permission.â€ | G2 fail fact |
-| D15 | claim corrected, communicated and rebased | `trust +15`, `business +10`, `financial +10` | â€œThe EUR 8m headline is withdrawn and replaced with attributable hypotheses.â€ | G6 recovery evidence |
-| D15 | contradicted claim retained internally or externally as supported | `trust -25`, `business -15`, `financial -10` | â€œA material contradicted claim remains represented as verified.â€ | G6 fail fact |
-| D16 | controlled temporary path, narrower cohort and transition owner | `delivery +10`, `trust +5`, `data -5` | â€œWeek-16 learning is preserved through an approved temporary path.â€ | G2/G6 pass evidence if honestly labelled |
-| D16 | scope/date kept by compressing evaluation/control work | `delivery -15`, `technical -10`, `trust -10` | â€œThe original promise is retained by reducing readiness evidence.â€ | G3/G7 exposure |
-| D17 | failed cohorts reliably contained with retest owner/threshold | `technical +10`, `trust +10`, `business -5` | â€œGerman and Czech complex formats are excluded and routed safely.â€ | G4 pass evidence |
-| D17 | aggregate result used to release failed material cohorts | `technical -25`, `data -15`, `trust -20` | â€œKnown commercial-field failures remain inside the release scope.â€ | G4 fail fact |
-| D18 | embedded redesign plus assisted/shadow learning and recheck date | `user +15`, `delivery +5`, `business -5` | â€œRelease mode changes while workflow fit is retested.â€ | G6 pass evidence if claim corrected |
-| D18 | mandate/release despite verified workflow rejection | `user -25`, `business -15`, `trust -10` | â€œTechnical acceptance proceeds despite contradictory usage evidence.â€ | G6 fail candidate if called business-ready |
-| D19 | task tracing, caching, loop controls, quality preservation, reforecast | `financial +15`, `technical +5` | â€œFour-times cost is contained and unit economics will be revalidated.â€ | G3 pass evidence if quality preserved |
-| D19 | continue without economic correction or apply silent universal cap | `financial -20`, `technical -10`, `trust -5` | â€œCost or quality remains uncontrolled under live usage.â€ | G6/G3 exposure |
-| D20 | recommendation reconciles evidence, scope, gates, acceptors and operations | effects follow selected outcome; no automatic bonus | â€œFinal recommendation records included and excluded capabilities and conditions.â€ | resolves all pending gates |
-| D20 | release contains applicable failed/unresolved material conditions | `trust -20`, relevant health `-15` | â€œFinal release claim conflicts with one or more readiness conditions.â€ | applicable gate fail facts |
+| D01 | bounded pilot plus owner and revision condition | `delivery +10`, `trust +5` | “Week 16 is recorded as an evidence decision for a bounded cohort.” | none |
+| D01 | enterprise promise without bounded authority/gates | `delivery -10`, `trust -10`, `business +5` | “Sponsor confirms the public launch expectation; scope and acceptance remain unresolved.” | `G1 exposure` if award action included |
+| D01 | open discovery without time-box/decision date | `delivery -10`, `business -5` | “Steering group asks when discovery will produce a decision.” | none |
+| D02 | Finance-owned hypothesis, attribution and pivot condition | `business +10`, `financial +5` | “Benefit claim is marked provisional pending baseline.” | none |
+| D02 | EUR 8m/30% recorded as verified commitment without baseline | `business -5`, `trust -5` | “The headline target enters the steering baseline without an attribution method.” | `G6 exposure`, not failure yet |
+| D03 | request tied to uncertainty, decision, owner and useful date | relevant dimension `+5` when evidence arrives and is used | “Evidence request accepted; result due in week N.” | affects `reasonably_obtainable` |
+| D03 | duplicate or untargeted request | no positive effect; credit consumed | “Request accepted, but no decision dependency is recorded.” | none |
+| D04 | bounded cohort/capability/authority/exclusions and exit criteria | `business +10`, `delivery +10`, `trust +5` | “Pilot boundary accepted for planning.” | clears pending G1 exposure if commitments excluded |
+| D04 | broad European scope without dependency/evidence boundary | `delivery -15`, `user -5`, `trust -5` | “The proposed release depends on unresolved sources, cohorts, and controls.” | pending G1 if material action enabled |
+| D04 | reduced scope tied to measurable workflow value | `business +5`, `delivery +10` | “Document and rules value will be tested independently of recommendation.” | none |
+| D05 | decomposed hybrid/component architecture with fallback | `technical +10`, `trust +5`, `financial +5` | “Tasks now have separate technologies, failure boundaries, and fallbacks.” | none |
+| D05 | autonomous end-to-end agent with broad tools | `technical -10`, `trust -15`, `financial -5` | “The design couples extraction, judgment, and action under one failure boundary.” | G1/G7 exposure |
+| D05 | historical awards used as target after EV-LABEL-01 is available | `technical -10`, `data -15`, `trust -5` | “Known target ambiguity remains in the recommendation design.” | G6 exposure; G4 later if released |
+| D06 | minimum authoritative sources, lineage, quality and fallback | `data +15`, `delivery +10` | “Five purpose-critical sources form the first-release data contract.” | none |
+| D06 | all 12 required before first value | `delivery -15`, `financial -5` | “Integration breadth is now on the critical path.” | none |
+| D06 | upload route explicitly temporary and controlled | `delivery +5`, `data -5`, `user -5` | “Temporary ingestion is viable but creates reconciliation and transition work.” | none |
+| D06 | representativeness/label claim contradicted by available evidence | `data -15`, `trust -10` | “Data fitness claim conflicts with profiling or label evidence.” | G6 exposure |
+| D07 | approved route with task evidence, controls and fallback | `technical +10`, `trust +10` | “Approved model route is accepted for bounded tasks.” | G2 pass evidence |
+| D07 | sanitized external comparison plus approved fallback | `technical +5`, `delivery +5` | “Model optionality is preserved without production-data exposure.” | G2 pass evidence |
+| D07 | production supplier data sent to unapproved endpoint | `trust -25`, `technical -10` | “Unapproved production-data processing is recorded as a control breach.” | G2 fail fact |
+| D08 | segmented metrics, severity, threshold, abstention and owner | `technical +15`, `data +10`, `trust +10` | “Release acceptance is defined by task and material cohort.” | G3 pass evidence |
+| D08 | aggregate accuracy alone | `technical -10`, `data -10` | “Critical cohorts and error severity remain invisible to the release gate.” | G3 exposure |
+| D09 | dependency validation, thin slice and harness front-loaded | `delivery +15`, `technical +5` | “Critical-path evidence precedes UI completeness.” | none |
+| D09 | UI/agent flow first, integration later | `delivery -10`, `technical -5` | “Visible progress increases while the access dependency remains unresolved.” | G6 exposure if called ready |
+| D09 | permanent manual upload as target state | `delivery -5`, `user -10`, `data -5` | “Manual ingestion protects timing but weakens operating fit and lineage.” | none |
+| D10 | balanced funded capacities plus contingency and year-one run cost | `delivery +10`, `financial +10`, `user +5` | “Evidence, controls, adoption, and operations have named capacity.” | G5 pass evidence |
+| D10 | specialist controls deferred or assigned to unauthorized lead | `delivery -10`, `trust -10`, `user -5` | “Material responsibilities lack credible capacity or authority.” | G5 exposure |
+| D11 | embedded evidence-led workflow with override and authority separation | `user +15`, `trust +10` | “Buyer review is embedded, traceable, and retains sourcing authority.” | G1 pass evidence |
+| D11 | separate portal or email copy path | `user -10`, `technical -5` | “Duplicate review and re-entry remain in the operating design.” | none |
+| D11 | material workflow action outside delegation | `trust -25` | “The workflow enables a supplier commitment outside approved delegation.” | G1 fail fact |
+| D12 | unit economics, sensitivity, caching/limits and quality-aware fallback | `financial +15`, `technical +5` | “Cost is governed per accepted comparison, with task-level controls.” | none |
+| D12 | one-call estimate retained after loop use is known | `financial -15`, `trust -5` | “The operating forecast excludes observed reprocessing and review loops.” | G6 exposure |
+| D13 | human award authority plus reversible non-binding actions | `trust +15`, `business +5` | “Autonomy is bounded without removing workflow value.” | G1 pass evidence |
+| D13 | autonomous award initiation accepted | `trust -30`, `business -10` | “Audit logging is present, but delegation policy is breached.” | G1 fail fact |
+| D13 | material decision delegated to delivery team | `trust -15` | “No authorized owner accepts the commercial risk.” | G5 fail candidate |
+| D14 | CISO concern accepted; approved task route re-evaluated/re-scoped | `trust +15`, `technical +10`, `delivery +5` | “The approved route and residual risk are reconciled with scope.” | G2/G5 pass evidence |
+| D14 | CISO bypassed and prohibited processing continues | `trust -25`, `delivery -10` | “Sponsor escalation did not grant model/data permission.” | G2 fail fact |
+| D15 | claim corrected, communicated and rebased | `trust +15`, `business +10`, `financial +10` | “The EUR 8m headline is withdrawn and replaced with attributable hypotheses.” | G6 recovery evidence |
+| D15 | contradicted claim retained internally or externally as supported | `trust -25`, `business -15`, `financial -10` | “A material contradicted claim remains represented as verified.” | G6 fail fact |
+| D16 | controlled temporary path, narrower cohort and transition owner | `delivery +10`, `trust +5`, `data -5` | “Week-16 learning is preserved through an approved temporary path.” | G2/G6 pass evidence if honestly labelled |
+| D16 | scope/date kept by compressing evaluation/control work | `delivery -15`, `technical -10`, `trust -10` | “The original promise is retained by reducing readiness evidence.” | G3/G7 exposure |
+| D17 | failed cohorts reliably contained with retest owner/threshold | `technical +10`, `trust +10`, `business -5` | “German and Czech complex formats are excluded and routed safely.” | G4 pass evidence |
+| D17 | aggregate result used to release failed material cohorts | `technical -25`, `data -15`, `trust -20` | “Known commercial-field failures remain inside the release scope.” | G4 fail fact |
+| D18 | embedded redesign plus assisted/shadow learning and recheck date | `user +15`, `delivery +5`, `business -5` | “Release mode changes while workflow fit is retested.” | G6 pass evidence if claim corrected |
+| D18 | mandate/release despite verified workflow rejection | `user -25`, `business -15`, `trust -10` | “Technical acceptance proceeds despite contradictory usage evidence.” | G6 fail candidate if called business-ready |
+| D19 | task tracing, caching, loop controls, quality preservation, reforecast | `financial +15`, `technical +5` | “Four-times cost is contained and unit economics will be revalidated.” | G3 pass evidence if quality preserved |
+| D19 | continue without economic correction or apply silent universal cap | `financial -20`, `technical -10`, `trust -5` | “Cost or quality remains uncontrolled under live usage.” | G6/G3 exposure |
+| D20 | recommendation reconciles evidence, scope, gates, acceptors and operations | effects follow selected outcome; no automatic bonus | “Final recommendation records included and excluded capabilities and conditions.” | resolves all pending gates |
+| D20 | release contains applicable failed/unresolved material conditions | `trust -20`, relevant health `-15` | “Final release claim conflicts with one or more readiness conditions.” | applicable gate fail facts |
 
 Short aliases in this table map to canonical variables: `business`, `delivery`, `technical`, `data`, `trust`, `financial`, and `user`.
 
@@ -250,7 +250,7 @@ D13 is a scheduled executive authority challenge, not a crisis injection. The si
 | C03 Source API delayed | entering week 10 / after C02 | Security review completes around week 15; meaningful integrated pilot evidence cannot finish by week 16 | early EV-API-01, thin slice, and temporary-path design improve recoverability | D16 |
 | C04 Segmented quality failure | entering week 13 | aggregate field accuracy 93%; German/Czech complex 78% with material commercial errors; English simple 96% | segmented thresholds make failure detectable and containment pre-designed | D17 |
 | C05 Workflow rejection | entering week 14 | duplicate review/re-entry; only 30% intent to use | EV-USER-01 and embedded design may reduce severity, but the fixture still requires a real workflow response | D18 |
-| C06 Cost loop overrun | entering week 15 | shadow inference cost is 4Ã— plan due to reprocessing and regeneration | EV-VOLUME-01, unit cost monitoring, caching and loop controls reduce containment time | D19 |
+| C06 Cost loop overrun | entering week 15 | shadow inference cost is 4× plan due to reprocessing and regeneration | EV-VOLUME-01, unit cost monitoring, caching and loop controls reduce containment time | D19 |
 
 ### 9.1 Crisis effect protocol
 
@@ -289,7 +289,7 @@ Preparedness never eliminates the fact itself. For example, segmented evaluation
 | HT-11 | EV-VOLUME-01; C06 always reveals outcome | D12 economics and D19 containment |
 | HT-12 | EV-COHORT-01 | D01/D04/D09/D16 viable controlled-pilot route |
 
-The â€œalways revealsâ€ entries guarantee fairness at the point of response. Earlier investigation earns preparedness and better options; it does not buy access to an answer key.
+The “always reveals” entries guarantee fairness at the point of response. Earlier investigation earns preparedness and better options; it does not buy access to an answer key.
 
 ## 11. Gate-fact lifecycle
 
@@ -362,7 +362,7 @@ Example:
 
 > German and Czech complex quotations recorded 78% field accuracy, including errors in tooling amortization and logistics terms. Your release threshold for critical commercial fields is 97%. These cohorts remain in the currently recorded pilot scope.
 
-This is permitted. â€œContain these cohorts to protect G4â€ is coaching and is prohibited during a first attempt.
+This is permitted. “Contain these cohorts to protect G4” is coaching and is prohibited during a first attempt.
 
 ## 14. D20 terminal resolution
 
