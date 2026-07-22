@@ -1,1 +1,153 @@
 
+{
+  "artifact_type": "evidence_catalog",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "state_machine": [
+    "locked",
+    "requestable",
+    "requested",
+    "available",
+    "verified",
+    "disputed",
+    "late"
+  ],
+  "items": [
+    {
+      "id": "EV-POLICY-01",
+      "cost": 0,
+      "lead_time_weeks": 0,
+      "reveal": "Delegation thresholds, segregation of duties, and approved model and data-processing rules.",
+      "hidden_truth_ids": ["HT-10"],
+      "latest_useful_decisions": ["D07", "D13"],
+      "initial_state": "available"
+    },
+    {
+      "id": "EV-SOURCE-01",
+      "cost": 0,
+      "lead_time_weeks": 0,
+      "reveal": "The 12-source inventory, ownership, preliminary access routes, and source-to-outcome dependencies.",
+      "hidden_truth_ids": ["HT-02", "HT-09"],
+      "latest_useful_decisions": ["D06"],
+      "initial_state": "available"
+    },
+    {
+      "id": "EV-WORKFLOW-01",
+      "cost": 1,
+      "lead_time_weeks": 1,
+      "reveal": "Activity-level time study showing that 70 percent of buyer effort is normalization and exception chasing.",
+      "hidden_truth_ids": ["HT-05"],
+      "latest_useful_decisions": ["D04"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-FINANCE-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "Finance baseline and savings-attribution defects inside the EUR 8 million headline claim.",
+      "hidden_truth_ids": ["HT-01"],
+      "latest_useful_decisions": ["D15"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-FIELD-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "Field-level completeness and reconciliation with awarded sourcing outcomes.",
+      "hidden_truth_ids": ["HT-03"],
+      "latest_useful_decisions": ["D08"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-SEGMENT-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "A 35 percent supplier-history gap and coverage bias toward strategic suppliers.",
+      "hidden_truth_ids": ["HT-03"],
+      "latest_useful_decisions": ["D08"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-LABEL-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "Historical award outcomes are not an objective best-supplier label.",
+      "hidden_truth_ids": ["HT-04"],
+      "latest_useful_decisions": ["D05", "D08"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-FORMAT-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "Language and format distribution, including the more difficult German and Czech quotation cohorts.",
+      "hidden_truth_ids": ["HT-07"],
+      "latest_useful_decisions": ["D08"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-USER-01",
+      "cost": 1,
+      "lead_time_weeks": 1,
+      "reveal": "Duplicate review, re-entry burden, and buyer rejection risk for a separate portal.",
+      "hidden_truth_ids": ["HT-08"],
+      "latest_useful_decisions": ["D11"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-API-01",
+      "cost": 1,
+      "lead_time_weeks": 1,
+      "reveal": "The source API security review has a six-week median lead time.",
+      "hidden_truth_ids": ["HT-09"],
+      "latest_useful_decisions": ["D09"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-MODEL-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "The external model is stronger on unstructured extraction, while the approved private route is adequate with templates, retrieval, and validation rules.",
+      "hidden_truth_ids": ["HT-06"],
+      "latest_useful_decisions": ["D07", "D14"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-THREAT-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "Task-level data flows, threats, processing restrictions, and control gaps.",
+      "hidden_truth_ids": ["HT-06", "HT-10"],
+      "latest_useful_decisions": ["D14"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-VOLUME-01",
+      "cost": 1,
+      "lead_time_weeks": 1,
+      "reveal": "Inference volume sensitivity to reprocessing and conversational review loops.",
+      "hidden_truth_ids": ["HT-11"],
+      "latest_useful_decisions": ["D12"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-EVALDESIGN-01",
+      "cost": 1,
+      "lead_time_weeks": 2,
+      "reveal": "A viable segmented gold-set and acceptance design for material cohorts.",
+      "hidden_truth_ids": ["HT-03", "HT-07"],
+      "latest_useful_decisions": ["D08"],
+      "initial_state": "requestable"
+    },
+    {
+      "id": "EV-COHORT-01",
+      "cost": 1,
+      "lead_time_weeks": 1,
+      "reveal": "A two-commodity controlled pilot can generate decision-quality evidence within 16 weeks.",
+      "hidden_truth_ids": ["HT-02", "HT-12"],
+      "latest_useful_decisions": ["D04", "D09"],
+      "initial_state": "requestable"
+    }
+  ]
+}
