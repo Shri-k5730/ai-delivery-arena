@@ -1,1 +1,703 @@
 
+{
+  "artifact_type": "reference_runs",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "runs": [
+    {
+      "run_id": "RR-A",
+      "label": "Strong controlled pilot",
+      "terminal_route": "conditional_release",
+      "investigation_schedule": [
+        { "evidence_id": "EV-WORKFLOW-01", "request_week": 1, "arrival_week": 2, "cost": 1, "first_use": "D04" },
+        { "evidence_id": "EV-FINANCE-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "D15" },
+        { "evidence_id": "EV-API-01", "request_week": 1, "arrival_week": 2, "cost": 1, "first_use": "D09" },
+        { "evidence_id": "EV-FORMAT-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "D08" },
+        { "evidence_id": "EV-SEGMENT-01", "request_week": 2, "arrival_week": 4, "cost": 1, "first_use": "D08" },
+        { "evidence_id": "EV-LABEL-01", "request_week": 2, "arrival_week": 4, "cost": 1, "first_use": "D08" },
+        { "evidence_id": "EV-USER-01", "request_week": 2, "arrival_week": 3, "cost": 1, "first_use": "D11" },
+        { "evidence_id": "EV-MODEL-01", "request_week": 3, "arrival_week": 5, "cost": 1, "first_use": "D14" },
+        { "evidence_id": "EV-THREAT-01", "request_week": 3, "arrival_week": 5, "cost": 1, "first_use": "D14" },
+        { "evidence_id": "EV-VOLUME-01", "request_week": 3, "arrival_week": 4, "cost": 1, "first_use": "D12" }
+      ],
+      "decisions": [
+        {
+          "decision_id": "D01", "evidence_id": "RR-A-D01-01",
+          "summary": "Defines week 16 as a controlled two-commodity pilot decision with no supplier commitment.",
+          "facts": [
+            { "key": "mandate.release_mode", "value": "controlled_pilot", "status": "supported", "evidence_refs": [] },
+            { "key": "mandate.decision_date_defined", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "authority.boundaries_defined", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D01-01"]
+        },
+        {
+          "decision_id": "D02", "evidence_id": "RR-A-D02-01",
+          "summary": "Treats cycle-time and EUR 8 million as Finance-owned hypotheses with attribution and a pivot rule.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "hypothesis", "status": "supported", "evidence_refs": [] },
+            { "key": "value.baseline_owned", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "value.stop_rule_defined", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D02-01"]
+        },
+        {
+          "decision_id": "D03", "evidence_id": "RR-A-D03-01",
+          "summary": "Allocates ten evidence requests to named uncertainties, decisions, owners, and useful dates.",
+          "facts": [
+            { "key": "investigation.targeted_request_count", "value": 10, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D03-01"]
+        },
+        {
+          "decision_id": "D04", "evidence_id": "RR-A-D04-01",
+          "summary": "Bounds the release to two commodities, named buyers, human recommendation, exclusions, and exit criteria.",
+          "facts": [
+            { "key": "scope.release_mode", "value": "controlled_pilot", "status": "supported", "evidence_refs": ["EV-WORKFLOW-01"] },
+            { "key": "scope.exclusions_defined", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "scope.exit_criteria_defined", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D04-01"]
+        },
+        {
+          "decision_id": "D05", "evidence_id": "RR-A-D05-01",
+          "summary": "Selects decomposed extraction, rules, retrieval, drafting, and orchestration components with safe fallback.",
+          "facts": [
+            { "key": "architecture.pattern", "value": "decomposed_hybrid", "status": "supported", "evidence_refs": [] },
+            { "key": "architecture.fallback_defined", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D05-01"]
+        },
+        {
+          "decision_id": "D06", "evidence_id": "RR-A-D06-01",
+          "summary": "Defines a five-source data contract with lineage and a controlled temporary ingestion route.",
+          "facts": [
+            { "key": "data.minimum_sources_selected", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] },
+            { "key": "data.lineage_defined", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] },
+            { "key": "delivery.temporary_path_controlled", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] }
+          ],
+          "selected_rule_ids": ["TR-D06-01", "TR-D06-03"]
+        },
+        {
+          "decision_id": "D07", "evidence_id": "RR-A-D07-01",
+          "summary": "Uses the approved private route for production and sanitized external comparison with a switch condition.",
+          "facts": [
+            { "key": "model.production_route_approved", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.fallback_defined", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.sanitized_external_test_only", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.task_adequacy_evidence_recorded", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D07-01", "TR-D07-02"]
+        },
+        {
+          "decision_id": "D08", "evidence_id": "RR-A-D08-01",
+          "summary": "Defines segmented thresholds, severity, abstention, ownership, and cohort routing for release.",
+          "facts": [
+            { "key": "evaluation.segmented_thresholds_defined", "value": true, "status": "supported", "evidence_refs": ["EV-FORMAT-01", "EV-SEGMENT-01"] },
+            { "key": "evaluation.severity_defined", "value": true, "status": "supported", "evidence_refs": ["EV-FORMAT-01"] },
+            { "key": "evaluation.abstention_defined", "value": true, "status": "supported", "evidence_refs": ["EV-FORMAT-01"] },
+            { "key": "evaluation.authorized_owner_named", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "evaluation.cohort_routing_owner_named", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D08-01"]
+        },
+        {
+          "decision_id": "D09", "evidence_id": "RR-A-D09-01",
+          "summary": "Front-loads API validation, a thin slice, and the evaluation harness with a replan trigger.",
+          "facts": [
+            { "key": "delivery.thin_slice_frontloaded", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.api_review_started", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.replan_trigger_defined", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] }
+          ],
+          "selected_rule_ids": ["TR-D09-01"]
+        },
+        {
+          "decision_id": "D10", "evidence_id": "RR-A-D10-01",
+          "summary": "Funds balanced engineering, evidence, security, change, operations, contingency, and first-year run capacity.",
+          "facts": [
+            { "key": "resourcing.balanced_capacity", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "resourcing.year_one_run_cost_funded", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D10-01"]
+        },
+        {
+          "decision_id": "D11", "evidence_id": "RR-A-D11-01",
+          "summary": "Embeds evidence-linked review and override in the buyer workflow while retaining recommendation authority.",
+          "facts": [
+            { "key": "workflow.embedded", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "workflow.field_evidence_visible", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "authority.human_recommendation_retained", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "workflow.adoption_threshold_defined", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "workflow.usability_test_completed", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] }
+          ],
+          "selected_rule_ids": ["TR-D11-01"]
+        },
+        {
+          "decision_id": "D12", "evidence_id": "RR-A-D12-01",
+          "summary": "Defines task-level unit economics, caching, loop limits, quality-aware fallback, monitoring, and alerts.",
+          "facts": [
+            { "key": "economics.unit_cost_model", "value": true, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "economics.loop_limit", "value": 3, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "economics.quality_aware_fallback", "value": true, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "operations.cost_monitoring_active", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "operations.presteering_cost_alert_recorded", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D12-01"]
+        },
+        {
+          "decision_id": "D13", "evidence_id": "RR-A-D13-01",
+          "summary": "Retains human award authority while permitting reversible non-binding workflow actions.",
+          "facts": [
+            { "key": "authority.human_award_authority_retained", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "authority.only_nonbinding_actions_enabled", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D13-01"]
+        },
+        {
+          "decision_id": "D14", "evidence_id": "RR-A-D14-01",
+          "summary": "Accepts the CISO constraint and reconciles task scope with the approved route and fallback.",
+          "facts": [
+            { "key": "security.ciso_concern_accepted", "value": true, "status": "supported", "evidence_refs": ["EV-THREAT-01"] },
+            { "key": "model.approved_route_reconciled_with_scope", "value": true, "status": "supported", "evidence_refs": ["EV-MODEL-01"] }
+          ],
+          "selected_rule_ids": ["TR-D14-01"]
+        },
+        {
+          "decision_id": "D15", "evidence_id": "RR-A-D15-01",
+          "summary": "Withdraws the headline claim, communicates the correction, and rebases benefits on attributable hypotheses.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "withdrawn_rebased", "status": "supported", "evidence_refs": ["EV-FINANCE-01"] },
+            { "key": "claim.correction_communicated", "value": true, "status": "supported", "evidence_refs": ["EV-FINANCE-01"] }
+          ],
+          "selected_rule_ids": ["TR-D15-01"]
+        },
+        {
+          "decision_id": "D16", "evidence_id": "RR-A-D16-01",
+          "summary": "Narrows the cohort and preserves learning through a controlled temporary route with a transition owner.",
+          "facts": [
+            { "key": "delivery.temporary_path_controlled", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "scope.cohort_narrowed_after_delay", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.transition_owner_named", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D16-01"]
+        },
+        {
+          "decision_id": "D17", "evidence_id": "RR-A-D17-01",
+          "summary": "Excludes and routes failed German and Czech formats with named remediation and retest ownership.",
+          "facts": [
+            { "key": "evaluation.failed_cohorts_contained", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C04"] },
+            { "key": "evaluation.retest_owner_named", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C04"] }
+          ],
+          "selected_rule_ids": ["TR-D17-01"]
+        },
+        {
+          "decision_id": "D18", "evidence_id": "RR-A-D18-01",
+          "summary": "Redesigns the workflow and moves to assisted shadow use with a dated adoption recheck.",
+          "facts": [
+            { "key": "workflow.redesigned_after_rejection", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C05"] },
+            { "key": "workflow.shadow_or_assisted_mode", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C05"] }
+          ],
+          "selected_rule_ids": ["TR-D18-01"]
+        },
+        {
+          "decision_id": "D19", "evidence_id": "RR-A-D19-01",
+          "summary": "Traces task costs, contains loops without silent quality loss, and reforecasts unit economics.",
+          "facts": [
+            { "key": "economics.task_cost_tracing", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] },
+            { "key": "economics.quality_preserved_during_containment", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] },
+            { "key": "economics.reforecast_completed", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] }
+          ],
+          "selected_rule_ids": ["TR-D19-01"]
+        },
+        {
+          "decision_id": "D20", "evidence_id": "RR-A-D20-01",
+          "summary": "Conditionally releases the passing two-commodity cohort with exclusions, acceptors, controls, and a next decision.",
+          "facts": [
+            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-A-D20-01"] }
+          ],
+          "selected_rule_ids": ["TR-D20-01"]
+        }
+      ],
+      "crisis_preparedness": [
+        { "crisis_id": "C01", "status": "prepared", "supporting_refs": ["D05", "D07"] },
+        { "crisis_id": "C02", "status": "prepared", "supporting_refs": ["D02", "EV-FINANCE-01"] },
+        { "crisis_id": "C03", "status": "prepared", "supporting_refs": ["D06", "D09"] },
+        { "crisis_id": "C04", "status": "prepared", "supporting_refs": ["D08"] },
+        { "crisis_id": "C05", "status": "prepared", "supporting_refs": ["D11", "EV-USER-01"] },
+        { "crisis_id": "C06", "status": "prepared", "supporting_refs": ["D12", "EV-VOLUME-01"] }
+      ],
+      "expected_terminal_health": {
+        "business_value": 48.6,
+        "delivery_confidence": 72.4,
+        "technical_integrity": 67.9,
+        "data_readiness": 41.3,
+        "trust_governance": 79.7,
+        "financial_sustainability": 68.3,
+        "user_adoption": 55.3
+      },
+      "expected_gates": [
+        { "gate_id": "G1", "status": "pass", "reason": "Human recommendation and award authority are retained." },
+        { "gate_id": "G2", "status": "pass", "reason": "Production uses an approved route and external comparison is sanitized." },
+        { "gate_id": "G3", "status": "pass", "reason": "Released tasks and cohorts have segmented thresholds and accountable acceptance." },
+        { "gate_id": "G4", "status": "pass", "reason": "Failed German and Czech complex formats are excluded and routed." },
+        { "gate_id": "G5", "status": "pass", "reason": "Material risks and acceptance decisions have authorized owners." },
+        { "gate_id": "G6", "status": "pass", "reason": "Contradicted benefit and readiness claims are corrected before release." },
+        { "gate_id": "G7", "status": "pass", "reason": "The released scope has usable monitoring, incident ownership, containment, and rollback." }
+      ]
+    },
+    {
+      "run_id": "RR-B",
+      "label": "Strong reduced-scope release with recommendation paused",
+      "terminal_route": "reduced_scope",
+      "investigation_schedule": [
+        { "evidence_id": "EV-WORKFLOW-01", "request_week": 1, "arrival_week": 2, "cost": 1, "first_use": "D04" },
+        { "evidence_id": "EV-SEGMENT-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "D06" },
+        { "evidence_id": "EV-LABEL-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "D06" },
+        { "evidence_id": "EV-USER-01", "request_week": 1, "arrival_week": 2, "cost": 1, "first_use": "D11" },
+        { "evidence_id": "EV-API-01", "request_week": 2, "arrival_week": 3, "cost": 1, "first_use": "D09" },
+        { "evidence_id": "EV-FORMAT-01", "request_week": 2, "arrival_week": 4, "cost": 1, "first_use": "D08" },
+        { "evidence_id": "EV-EVALDESIGN-01", "request_week": 2, "arrival_week": 4, "cost": 1, "first_use": "D08" },
+        { "evidence_id": "EV-FINANCE-01", "request_week": 3, "arrival_week": 5, "cost": 1, "first_use": "D15" },
+        { "evidence_id": "EV-MODEL-01", "request_week": 3, "arrival_week": 5, "cost": 1, "first_use": "D14" },
+        { "evidence_id": "EV-VOLUME-01", "request_week": 3, "arrival_week": 4, "cost": 1, "first_use": "D12" }
+      ],
+      "decisions": [
+        {
+          "decision_id": "D01", "evidence_id": "RR-B-D01-01",
+          "summary": "Frames week 16 as a bounded release-or-pause decision rather than a recommendation promise.",
+          "facts": [
+            { "key": "mandate.release_mode", "value": "controlled_pilot", "status": "supported", "evidence_refs": [] },
+            { "key": "mandate.decision_date_defined", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "authority.boundaries_defined", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D01-01"]
+        },
+        {
+          "decision_id": "D02", "evidence_id": "RR-B-D02-01",
+          "summary": "Separates document and recommendation value hypotheses under Finance ownership and explicit stop rules.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "hypothesis", "status": "supported", "evidence_refs": [] },
+            { "key": "value.baseline_owned", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "value.stop_rule_defined", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D02-01"]
+        },
+        {
+          "decision_id": "D03", "evidence_id": "RR-B-D03-01",
+          "summary": "Allocates all ten credits to workflow, data, evaluation, Finance, model, dependency, and cost evidence.",
+          "facts": [
+            { "key": "investigation.targeted_request_count", "value": 10, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D03-01"]
+        },
+        {
+          "decision_id": "D04", "evidence_id": "RR-B-D04-01",
+          "summary": "Makes recommendation conditional and isolates measurable document and rules value for the first release.",
+          "facts": [
+            { "key": "scope.release_mode", "value": "reduced_scope", "status": "supported", "evidence_refs": ["EV-WORKFLOW-01"] },
+            { "key": "value.workflow_value_measurable", "value": true, "status": "supported", "evidence_refs": ["EV-WORKFLOW-01"] }
+          ],
+          "selected_rule_ids": ["TR-D04-03"]
+        },
+        {
+          "decision_id": "D05", "evidence_id": "RR-B-D05-01",
+          "summary": "Uses a modular hybrid pattern so recommendation can pause without disabling document-processing value.",
+          "facts": [
+            { "key": "architecture.pattern", "value": "decomposed_hybrid", "status": "supported", "evidence_refs": [] },
+            { "key": "architecture.fallback_defined", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D05-01"]
+        },
+        {
+          "decision_id": "D06", "evidence_id": "RR-B-D06-01",
+          "summary": "Selects minimum sources, records lineage and coverage bias, and rejects historical awards as objective labels.",
+          "facts": [
+            { "key": "data.minimum_sources_selected", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] },
+            { "key": "data.lineage_defined", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] },
+            { "key": "data.supplier_coverage_profiled", "value": true, "status": "supported", "evidence_refs": ["EV-SEGMENT-01"] },
+            { "key": "data.label_validity_reviewed", "value": true, "status": "supported", "evidence_refs": ["EV-LABEL-01"] }
+          ],
+          "selected_rule_ids": ["TR-D06-01"]
+        },
+        {
+          "decision_id": "D07", "evidence_id": "RR-B-D07-01",
+          "summary": "Uses the approved private model only for bounded extraction and drafting tasks with fallback.",
+          "facts": [
+            { "key": "model.production_route_approved", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.fallback_defined", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.task_adequacy_evidence_recorded", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D07-01"]
+        },
+        {
+          "decision_id": "D08", "evidence_id": "RR-B-D08-01",
+          "summary": "Defines segmented release thresholds for document tasks while keeping recommendation evaluation non-production.",
+          "facts": [
+            { "key": "evaluation.segmented_thresholds_defined", "value": true, "status": "supported", "evidence_refs": ["EV-FORMAT-01", "EV-EVALDESIGN-01"] },
+            { "key": "evaluation.severity_defined", "value": true, "status": "supported", "evidence_refs": ["EV-EVALDESIGN-01"] },
+            { "key": "evaluation.abstention_defined", "value": true, "status": "supported", "evidence_refs": ["EV-EVALDESIGN-01"] },
+            { "key": "evaluation.authorized_owner_named", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "evaluation.cohort_routing_owner_named", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D08-01"]
+        },
+        {
+          "decision_id": "D09", "evidence_id": "RR-B-D09-01",
+          "summary": "Front-loads a thin slice and evaluation harness with a controlled temporary route and replan trigger.",
+          "facts": [
+            { "key": "delivery.thin_slice_frontloaded", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.api_review_started", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.replan_trigger_defined", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.temporary_path_controlled", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] }
+          ],
+          "selected_rule_ids": ["TR-D09-01"]
+        },
+        {
+          "decision_id": "D10", "evidence_id": "RR-B-D10-01",
+          "summary": "Funds balanced capacity while shifting recommendation effort into data, workflow, evaluation, and operations.",
+          "facts": [
+            { "key": "resourcing.balanced_capacity", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "resourcing.year_one_run_cost_funded", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D10-01"]
+        },
+        {
+          "decision_id": "D11", "evidence_id": "RR-B-D11-01",
+          "summary": "Embeds document review, evidence, editing, and override while leaving recommendation out of live use.",
+          "facts": [
+            { "key": "workflow.embedded", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "workflow.field_evidence_visible", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "authority.human_recommendation_retained", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "workflow.adoption_threshold_defined", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] },
+            { "key": "workflow.usability_test_completed", "value": true, "status": "supported", "evidence_refs": ["EV-USER-01"] }
+          ],
+          "selected_rule_ids": ["TR-D11-01"]
+        },
+        {
+          "decision_id": "D12", "evidence_id": "RR-B-D12-01",
+          "summary": "Separates released task economics from experimental recommendation spend and installs quality-preserving controls.",
+          "facts": [
+            { "key": "economics.unit_cost_model", "value": true, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "economics.loop_limit", "value": 3, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "economics.quality_aware_fallback", "value": true, "status": "supported", "evidence_refs": ["EV-VOLUME-01"] },
+            { "key": "operations.cost_monitoring_active", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "operations.presteering_cost_alert_recorded", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D12-01"]
+        },
+        {
+          "decision_id": "D13", "evidence_id": "RR-B-D13-01",
+          "summary": "Declines autonomous awards and permits only non-binding assistance under retained commercial authority.",
+          "facts": [
+            { "key": "authority.human_award_authority_retained", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "authority.only_nonbinding_actions_enabled", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D13-01"]
+        },
+        {
+          "decision_id": "D14", "evidence_id": "RR-B-D14-01",
+          "summary": "Demonstrates that the reduced operational scope fits the approved endpoint and accepts the CISO constraint.",
+          "facts": [
+            { "key": "security.ciso_concern_accepted", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] },
+            { "key": "model.approved_route_reconciled_with_scope", "value": true, "status": "supported", "evidence_refs": ["EV-MODEL-01"] }
+          ],
+          "selected_rule_ids": ["TR-D14-01"]
+        },
+        {
+          "decision_id": "D15", "evidence_id": "RR-B-D15-01",
+          "summary": "Corrects the headline and limits the business case to attributable document handling and exception value.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "withdrawn_rebased", "status": "supported", "evidence_refs": ["EV-FINANCE-01"] },
+            { "key": "claim.correction_communicated", "value": true, "status": "supported", "evidence_refs": ["EV-FINANCE-01"] }
+          ],
+          "selected_rule_ids": ["TR-D15-01"]
+        },
+        {
+          "decision_id": "D16", "evidence_id": "RR-B-D16-01",
+          "summary": "Uses controlled temporary ingestion for the reduced scope and withholds integrated-production claims.",
+          "facts": [
+            { "key": "delivery.temporary_path_controlled", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "scope.cohort_narrowed_after_delay", "value": true, "status": "supported", "evidence_refs": ["EV-API-01"] },
+            { "key": "delivery.transition_owner_named", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D16-01"]
+        },
+        {
+          "decision_id": "D17", "evidence_id": "RR-B-D17-01",
+          "summary": "Contains failed formats and releases only passing document cohorts while recommendation remains paused.",
+          "facts": [
+            { "key": "evaluation.failed_cohorts_contained", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C04"] },
+            { "key": "evaluation.retest_owner_named", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C04"] }
+          ],
+          "selected_rule_ids": ["TR-D17-01"]
+        },
+        {
+          "decision_id": "D18", "evidence_id": "RR-B-D18-01",
+          "summary": "Redesigns the embedded workflow and uses shadow validation for only the reduced capabilities.",
+          "facts": [
+            { "key": "workflow.redesigned_after_rejection", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C05"] },
+            { "key": "workflow.shadow_or_assisted_mode", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C05"] }
+          ],
+          "selected_rule_ids": ["TR-D18-01"]
+        },
+        {
+          "decision_id": "D19", "evidence_id": "RR-B-D19-01",
+          "summary": "Contains released-task loops and keeps recommendation experiments outside operational economics.",
+          "facts": [
+            { "key": "economics.task_cost_tracing", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] },
+            { "key": "economics.quality_preserved_during_containment", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] },
+            { "key": "economics.reforecast_completed", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] }
+          ],
+          "selected_rule_ids": ["TR-D19-01"]
+        },
+        {
+          "decision_id": "D20", "evidence_id": "RR-B-D20-01",
+          "summary": "Releases bounded document automation and pauses recommendation under a 12-week terminate-or-continue plan.",
+          "facts": [
+            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-B-D20-01"] }
+          ],
+          "selected_rule_ids": ["TR-D20-01"]
+        }
+      ],
+      "crisis_preparedness": [
+        { "crisis_id": "C01", "status": "prepared", "supporting_refs": ["D05", "D07"] },
+        { "crisis_id": "C02", "status": "prepared", "supporting_refs": ["D02", "EV-FINANCE-01"] },
+        { "crisis_id": "C03", "status": "prepared", "supporting_refs": ["D09"] },
+        { "crisis_id": "C04", "status": "prepared", "supporting_refs": ["D08"] },
+        { "crisis_id": "C05", "status": "prepared", "supporting_refs": ["D11", "EV-USER-01"] },
+        { "crisis_id": "C06", "status": "prepared", "supporting_refs": ["D12", "EV-VOLUME-01"] }
+      ],
+      "expected_terminal_health": {
+        "business_value": 47.0,
+        "delivery_confidence": 69.9,
+        "technical_integrity": 66.9,
+        "data_readiness": 43.0,
+        "trust_governance": 78.7,
+        "financial_sustainability": 68.3,
+        "user_adoption": 56.6
+      },
+      "expected_gates": [
+        { "gate_id": "G1", "status": "pass", "reason": "No material supplier commitment is delegated to AI." },
+        { "gate_id": "G2", "status": "pass", "reason": "Only approved model and processing routes are used." },
+        { "gate_id": "G3", "status": "pass", "reason": "Released document tasks have segmented thresholds and recommendation remains non-production." },
+        { "gate_id": "G4", "status": "pass", "reason": "Failed language and format cohorts are excluded and routed." },
+        { "gate_id": "G5", "status": "pass", "reason": "Released operations and paused evidence work have authorized owners." },
+        { "gate_id": "G6", "status": "pass", "reason": "Recommendation capability and benefit are explicitly represented as unproven." },
+        { "gate_id": "G7", "status": "pass", "reason": "Released document automation has usable monitoring, containment, incident ownership, and rollback." }
+      ]
+    },
+    {
+      "run_id": "RR-C",
+      "label": "Plausible but unsafe on-time release",
+      "terminal_route": "full_release",
+      "investigation_schedule": [
+        { "evidence_id": "EV-MODEL-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "selective" },
+        { "evidence_id": "EV-THREAT-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "not_reconciled" },
+        { "evidence_id": "EV-VOLUME-01", "request_week": 1, "arrival_week": 2, "cost": 1, "first_use": "not_reconciled" },
+        { "evidence_id": "EV-EVALDESIGN-01", "request_week": 1, "arrival_week": 3, "cost": 1, "first_use": "selective" }
+      ],
+      "decisions": [
+        {
+          "decision_id": "D01", "evidence_id": "RR-C-D01-01",
+          "summary": "Commits to an enterprise business release without cohort, authority boundary, or revision condition.",
+          "facts": [
+            { "key": "mandate.release_mode", "value": "enterprise_promise", "status": "supported", "evidence_refs": [] },
+            { "key": "authority.boundaries_defined", "value": false, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D01-02"]
+        },
+        {
+          "decision_id": "D02", "evidence_id": "RR-C-D02-01",
+          "summary": "Records EUR 8 million and 30 percent as committed outcomes without a baseline or Finance owner.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "verified_commitment", "status": "supported", "evidence_refs": [] },
+            { "key": "value.baseline_owned", "value": false, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D02-02"]
+        },
+        {
+          "decision_id": "D03", "evidence_id": "RR-C-D03-01",
+          "summary": "Uses four credits on technical studies without defining useful decision dates or reconciling inconvenient results.",
+          "facts": [
+            { "key": "investigation.targeted_request_count", "value": 4, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D03-01"]
+        },
+        {
+          "decision_id": "D04", "evidence_id": "RR-C-D04-01",
+          "summary": "Selects broad European extraction, ranking, recommendation, and award initiation without dependency boundaries.",
+          "facts": [
+            { "key": "scope.release_mode", "value": "broad_european", "status": "supported", "evidence_refs": [] },
+            { "key": "scope.dependency_boundary_defined", "value": false, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D04-02"]
+        },
+        {
+          "decision_id": "D05", "evidence_id": "RR-C-D05-01",
+          "summary": "Couples extraction, ranking, drafting, and workflow actions in one agent without component fallback.",
+          "facts": [
+            { "key": "architecture.pattern", "value": "autonomous_end_to_end_agent", "status": "supported", "evidence_refs": [] },
+            { "key": "architecture.fallback_defined", "value": false, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D05-02"]
+        },
+        {
+          "decision_id": "D06", "evidence_id": "RR-C-D06-01",
+          "summary": "Makes all 12 systems prerequisites and defers known missing supplier history to rollout.",
+          "facts": [
+            { "key": "data.all_twelve_required_before_value", "value": true, "status": "supported", "evidence_refs": ["EV-SOURCE-01"] },
+            { "key": "data.recommendation_target", "value": "historical_awards", "status": "asserted", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D06-02"]
+        },
+        {
+          "decision_id": "D07", "evidence_id": "RR-C-D07-01",
+          "summary": "Selects the unapproved external model and plans production supplier-data use after sponsor escalation.",
+          "facts": [
+            { "key": "model.production_route", "value": "external_unapproved", "status": "supported", "evidence_refs": ["EV-MODEL-01"] },
+            { "key": "processing.prohibited_supplier_data_planned", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": []
+        },
+        {
+          "decision_id": "D08", "evidence_id": "RR-C-D08-01",
+          "summary": "Uses aggregate recommendation accuracy and buyer UAT without material cohort thresholds or acceptance ownership.",
+          "facts": [
+            { "key": "evaluation.aggregate_only", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D08-02"]
+        },
+        {
+          "decision_id": "D09", "evidence_id": "RR-C-D09-01",
+          "summary": "Builds the polished portal and agent flow first while deferring integration and evaluation dependencies.",
+          "facts": [
+            { "key": "delivery.ui_first", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "delivery.integration_deferred", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D09-02"]
+        },
+        {
+          "decision_id": "D10", "evidence_id": "RR-C-D10-01",
+          "summary": "Underfunds evaluation, change, FinOps, and operations and assigns material risks to an unauthorized delivery lead.",
+          "facts": [
+            { "key": "resourcing.specialist_controls_underfunded", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "authority.material_risk_owner_authorized", "value": false, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D10-02"]
+        },
+        {
+          "decision_id": "D11", "evidence_id": "RR-C-D11-01",
+          "summary": "Retains duplicate portal work and enables award initiation after a buyer click outside confirmed delegation.",
+          "facts": [
+            { "key": "workflow.duplicate_entry", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "authority.material_action_outside_delegation", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D11-02", "TR-D11-03"]
+        },
+        {
+          "decision_id": "D12", "evidence_id": "RR-C-D12-01",
+          "summary": "Retains the one-call estimate after review loops are known and relies on a monthly budget alert.",
+          "facts": [
+            { "key": "economics.one_call_estimate_retained", "value": true, "status": "supported", "evidence_refs": [] },
+            { "key": "economics.review_loops_known", "value": true, "status": "supported", "evidence_refs": [] }
+          ],
+          "selected_rule_ids": ["TR-D12-02"]
+        },
+        {
+          "decision_id": "D13", "evidence_id": "RR-C-D13-01",
+          "summary": "Accepts autonomous award initiation below EUR 250000 despite the segregation-of-duties rule.",
+          "facts": [
+            { "key": "authority.autonomous_award_initiation", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D13-02"]
+        },
+        {
+          "decision_id": "D14", "evidence_id": "RR-C-D14-01",
+          "summary": "Bypasses the CISO and records that prohibited supplier-data processing occurred on the external route.",
+          "facts": [
+            { "key": "security.ciso_bypassed", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C01"] },
+            { "key": "processing.prohibited_supplier_data_occurred", "value": true, "status": "supported", "evidence_refs": ["EV-POLICY-01"] }
+          ],
+          "selected_rule_ids": ["TR-D14-02"]
+        },
+        {
+          "decision_id": "D15", "evidence_id": "RR-C-D15-01",
+          "summary": "Retains the contradicted EUR 8 million claim externally and hides the correction in an internal appendix.",
+          "facts": [
+            { "key": "value.claim_eur8m_status", "value": "contradicted_retained", "status": "contradicted", "evidence_refs": ["EV-CRISIS-C02"] },
+            { "key": "claim.correction_communicated", "value": false, "status": "supported", "evidence_refs": ["EV-CRISIS-C02"] }
+          ],
+          "selected_rule_ids": ["TR-D15-02"]
+        },
+        {
+          "decision_id": "D16", "evidence_id": "RR-C-D16-01",
+          "summary": "Keeps date and scope, compresses testing, and calls uncontrolled manual ingestion production-ready.",
+          "facts": [
+            { "key": "delivery.testing_compressed", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C03"] },
+            { "key": "claim.temporary_path_called_production_ready", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C03"] }
+          ],
+          "selected_rule_ids": ["TR-D16-02"]
+        },
+        {
+          "decision_id": "D17", "evidence_id": "RR-C-D17-01",
+          "summary": "Releases known failed German and Czech cohorts behind generic buyer checking.",
+          "facts": [
+            { "key": "evaluation.failed_material_cohorts_released", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C04"] }
+          ],
+          "selected_rule_ids": ["TR-D17-02"]
+        },
+        {
+          "decision_id": "D18", "evidence_id": "RR-C-D18-01",
+          "summary": "Mandates use and releases despite verified workflow rejection without redesign or a re-evaluation threshold.",
+          "facts": [
+            { "key": "workflow.release_despite_verified_rejection", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C05"] }
+          ],
+          "selected_rule_ids": ["TR-D18-02"]
+        },
+        {
+          "decision_id": "D19", "evidence_id": "RR-C-D19-01",
+          "summary": "Continues uncontrolled cost and imposes a silent universal cap without regression evidence.",
+          "facts": [
+            { "key": "economics.uncontrolled_or_silent_cap", "value": true, "status": "supported", "evidence_refs": ["EV-CRISIS-C06"] }
+          ],
+          "selected_rule_ids": ["TR-D19-02"]
+        },
+        {
+          "decision_id": "D20", "evidence_id": "RR-C-D20-01",
+          "summary": "Recommends full action-capable release despite unresolved authority, permission, evaluation, cohort, claim, and control failures.",
+          "facts": [
+            { "key": "release.includes_failed_or_unresolved_material_condition", "value": true, "status": "supported", "evidence_refs": ["RR-C-D20-01"] }
+          ],
+          "selected_rule_ids": ["TR-D20-02"]
+        }
+      ],
+      "crisis_preparedness": [
+        { "crisis_id": "C01", "status": "unprepared", "supporting_refs": ["D05", "D07"] },
+        { "crisis_id": "C02", "status": "unprepared", "supporting_refs": ["D02"] },
+        { "crisis_id": "C03", "status": "unprepared", "supporting_refs": ["D09"] },
+        { "crisis_id": "C04", "status": "unprepared", "supporting_refs": ["D08"] },
+        { "crisis_id": "C05", "status": "unprepared", "supporting_refs": ["D11"] },
+        { "crisis_id": "C06", "status": "unprepared", "supporting_refs": ["D12"] }
+      ],
+      "expected_terminal_health": {
+        "business_value": 24.0,
+        "delivery_confidence": 12.4,
+        "technical_integrity": 17.0,
+        "data_readiness": 24.1,
+        "trust_governance": 3.1,
+        "financial_sustainability": 22.3,
+        "user_adoption": 20.7
+      },
+      "expected_gates": [
+        { "gate_id": "G1", "status": "fail", "reason": "Award initiation is authorized outside approved commercial delegation." },
+        { "gate_id": "G2", "status": "fail", "reason": "Production supplier data is processed through an unapproved endpoint after CISO refusal." },
+        { "gate_id": "G3", "status": "fail", "reason": "Production approval lacks segmented thresholds and accountable acceptance." },
+        { "gate_id": "G4", "status": "fail", "reason": "Known material German and Czech failures proceed without effective containment." },
+        { "gate_id": "G5", "status": "fail", "reason": "Security, commercial, and operating risks are assigned to unauthorized or absent owners." },
+        { "gate_id": "G6", "status": "fail", "reason": "Contradicted benefit, readiness, cohort, cost, and integration claims remain represented as established." },
+        { "gate_id": "G7", "status": "fail", "reason": "Action-capable AI releases without usable monitoring, incident ownership, containment, and rollback." }
+      ]
+    }
+  ]
+}
