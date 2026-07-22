@@ -270,7 +270,7 @@ The next version should not add more content. It should make the existing conten
 2. Replace the narrative transition table with rule records containing IDs and stack policies.
 3. Define crisis-preparedness predicates.
 4. Add authority, processing-event, and operational-control schemas.
-5. Re-run the three traces and publish exact health snapshots only if independently reproducible.
+5. Re-run the three traces and publish exact health snapshots only if independently reproducible. 
 6. Then run blind criterion scoring with two reviewers and create `REFERENCE_SCORES.md`.
 
 Application development remains blocked until PT-01 through PT-04 are closed. The scenario does not need a UI yet. It needs deterministic semantics.
