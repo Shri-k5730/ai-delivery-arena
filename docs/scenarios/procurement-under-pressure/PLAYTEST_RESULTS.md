@@ -49,7 +49,7 @@ All fixtures state that they receive ten investigation credits, but their ledger
 | Fixture | Paid evidence named | Apparent credits | Reproducible timing? | Result |
 |---|---|---:|---|---|
 | A | workflow, Finance, API, format, segment, label, user, model, threat, volume | 10 | No. The first four are staged, but later request weeks are not fixed. | budget plausible; availability partly assumed |
-| B | workflow, segment, label, user, API, format, evaluation design, threat, model, volume | 10 | No. â€œLaterâ€ does not define request week or arrival week. | budget plausible; D04-D08 availability indeterminate |
+| B | workflow, segment, label, user, API, format, evaluation design, threat, model, volume | 10 | No. “Later” does not define request week or arrival week. | budget plausible; D04-D08 availability indeterminate |
 | C | model, threat, volume, evaluation design | 4 | Partly. Request dates and latest-useful links are absent. | six credits unused; no terminal benefit |
 
 The free policy and source evidence can be available immediately in all runs. The paid evidence cannot be promoted from named to `Available` or `Verified` reproducibly until each request has `request_week`, `lead_time`, `linked_decision`, and `latest_useful_week`.
@@ -183,7 +183,7 @@ The table records the facts and transition classes that can be reproduced. `Matc
 | G4 Severe cohort failure | Pass | Pass | Fail | Strong. C04 is fixed and D17 containment is explicit. |
 | G5 Accountable ownership | Pass | Pass | Fail | Requires a versioned authority map, not title inference. |
 | G6 Claim integrity | Pass after correction | Pass after correction | Fail | Works, but C produces multiple duplicate G6 candidates requiring consolidation. |
-| G7 Operational control | Pass candidate | Pass candidate | Fail | A/B name controls, but â€œusableâ€ cannot be established from the concise fixture alone. |
+| G7 Operational control | Pass candidate | Pass candidate | Fail | A/B name controls, but “usable” cannot be established from the concise fixture alone. |
 
 The gate layer discriminates the routes better than the numeric health layer. That validates the decision to keep gates non-compensable and report them before the overall score.
 
