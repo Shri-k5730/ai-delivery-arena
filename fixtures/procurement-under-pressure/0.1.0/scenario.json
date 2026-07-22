@@ -1,1 +1,124 @@
 
+{
+  "artifact_type": "scenario",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "title": "Procurement Under Pressure",
+  "status": "paper_validated",
+  "locked_invariants": [
+    "The bounded use case is supplier quotation analysis and sourcing recommendations.",
+    "Program-health scores remain hidden during a first attempt; only operational evidence, signals, and consequences are exposed.",
+    "The final assessment leads with seven dimension scores and critical-gate status; the overall score is secondary and cannot compensate for a failed gate."
+  ],
+  "run_config": {
+    "duration_weeks": 16,
+    "budget_eur": 1200000,
+    "investigation_credits": 10,
+    "first_attempt_health_visibility": false,
+    "randomness_allowed": false
+  },
+  "health_model": {
+    "dimensions": [
+      "business_value",
+      "delivery_confidence",
+      "technical_integrity",
+      "data_readiness",
+      "trust_governance",
+      "financial_sustainability",
+      "user_adoption"
+    ],
+    "initial_state": {
+      "business_value": 45,
+      "delivery_confidence": 40,
+      "technical_integrity": 50,
+      "data_readiness": 35,
+      "trust_governance": 35,
+      "financial_sustainability": 50,
+      "user_adoption": 40
+    },
+    "positive_formula": "h + e * (100 - h) / 100",
+    "negative_formula": "h + e * h / 100",
+    "precision": 8
+  },
+  "authority_map": [
+    {
+      "role_id": "cpo_sponsor",
+      "authority": ["procurement_outcome", "benefit_case", "business_scope_risk"]
+    },
+    {
+      "role_id": "cio",
+      "authority": ["enterprise_technology_standards", "production_service_acceptance"]
+    },
+    {
+      "role_id": "ciso",
+      "authority": ["model_data_processing_approval", "security_exception", "security_residual_risk"]
+    },
+    {
+      "role_id": "finance_owner",
+      "authority": ["financial_baseline", "benefit_claim", "funding_release"]
+    },
+    {
+      "role_id": "strategic_sourcing_owner",
+      "authority": ["workflow_acceptance", "sourcing_policy"]
+    },
+    {
+      "role_id": "data_owner",
+      "authority": ["source_access", "data_quality_remediation", "permitted_data_use"]
+    },
+    {
+      "role_id": "procurement_quality",
+      "authority": ["evaluation_acceptance", "cohort_release"]
+    },
+    {
+      "role_id": "operations_owner",
+      "authority": ["monitoring_acceptance", "incident_response", "containment", "rollback"]
+    },
+    {
+      "role_id": "procurement_council",
+      "authority": ["material_award_approval"]
+    },
+    {
+      "role_id": "ai_ml_lead",
+      "authority": ["technical_recommendation"]
+    },
+    {
+      "role_id": "ai_delivery_lead",
+      "authority": ["delivery_recommendation", "delivery_coordination"]
+    }
+  ],
+  "stages": [
+    { "id": "frame", "decision_ids": ["D01", "D02", "D03", "D04"], "nominal_weeks": [0, 2] },
+    { "id": "design", "decision_ids": ["D05", "D06", "D07", "D08"], "nominal_weeks": [3, 5] },
+    { "id": "plan", "decision_ids": ["D09", "D10", "D11", "D12"], "nominal_weeks": [5, 7] },
+    { "id": "defend", "decision_ids": ["D13", "D14", "D15", "D16"], "nominal_weeks": [8, 10] },
+    { "id": "operate", "decision_ids": ["D17", "D18", "D19", "D20"], "nominal_weeks": [13, 16] }
+  ],
+  "decisions": [
+    { "id": "D01", "stage": "frame", "week": 0, "title": "Interpret the 16-week mandate" },
+    { "id": "D02", "stage": "frame", "week": 0, "title": "Define the outcome and benefit claim" },
+    { "id": "D03", "stage": "frame", "week": 1, "title": "Allocate initial investigation" },
+    { "id": "D04", "stage": "frame", "week": 2, "title": "Set the first-release boundary" },
+    { "id": "D05", "stage": "design", "week": 3, "title": "Select the solution pattern" },
+    { "id": "D06", "stage": "design", "week": 3, "title": "Establish the data strategy" },
+    { "id": "D07", "stage": "design", "week": 4, "title": "Choose the model route" },
+    { "id": "D08", "stage": "design", "week": 5, "title": "Define evaluation and release thresholds" },
+    { "id": "D09", "stage": "plan", "week": 5, "title": "Sequence delivery and dependencies" },
+    { "id": "D10", "stage": "plan", "week": 6, "title": "Allocate budget and team" },
+    { "id": "D11", "stage": "plan", "week": 6, "title": "Design buyer workflow and human control" },
+    { "id": "D12", "stage": "plan", "week": 7, "title": "Define operating economics" },
+    { "id": "D13", "stage": "defend", "week": 8, "title": "Respond to the sponsor's autonomy demand" },
+    { "id": "D14", "stage": "defend", "week": 9, "title": "Respond to the CISO model challenge" },
+    { "id": "D15", "stage": "defend", "week": 9, "title": "Respond to Finance's benefit challenge" },
+    { "id": "D16", "stage": "defend", "week": 10, "title": "Replan after dependency delay" },
+    { "id": "D17", "stage": "operate", "week": 13, "title": "Handle segmented evaluation failure" },
+    { "id": "D18", "stage": "operate", "week": 14, "title": "Handle buyer rejection of workflow" },
+    { "id": "D19", "stage": "operate", "week": 15, "title": "Handle cost overrun and loop growth" },
+    { "id": "D20", "stage": "operate", "week": 16, "title": "Make the release recommendation" }
+  ],
+  "hidden_truth_ids": [
+    "HT-01", "HT-02", "HT-03", "HT-04", "HT-05", "HT-06",
+    "HT-07", "HT-08", "HT-09", "HT-10", "HT-11", "HT-12"
+  ],
+  "gate_ids": ["G1", "G2", "G3", "G4", "G5", "G6", "G7"]
+}
