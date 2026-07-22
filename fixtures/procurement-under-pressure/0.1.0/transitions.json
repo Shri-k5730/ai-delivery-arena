@@ -1,1 +1,658 @@
 
+{
+  "artifact_type": "transitions",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "arbitration": {
+    "match_requirement": "All required facts must be supported unless a rule explicitly tests an asserted, contradicted, or superseded status.",
+    "within_group": "Apply only the highest-priority matching rule in each stacking group.",
+    "between_groups": "After within-group arbitration, apply surviving rules in ascending rule ID; stacking groups do not reorder the authored event sequence.",
+    "priority_classes": {
+      "weak_pattern": 100,
+      "supported_baseline": 200,
+      "controlled_exception": 300,
+      "contradiction": 400,
+      "breach_or_failure": 500
+    },
+    "effects_atomic": true,
+    "decision_then_crisis_then_response": true
+  },
+  "rules": [
+    {
+      "rule_id": "TR-D01-01", "decision_id": "D01", "priority": 200, "stacking_group": "D01",
+      "when": { "all": [
+        { "source": "fact", "key": "mandate.release_mode", "operator": "eq", "value": "controlled_pilot", "status": "supported" },
+        { "source": "fact", "key": "mandate.decision_date_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 5 }
+      ],
+      "signal": "Week 16 is recorded as an evidence decision for a bounded cohort.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D01-02", "decision_id": "D01", "priority": 100, "stacking_group": "D01",
+      "when": { "all": [
+        { "source": "fact", "key": "mandate.release_mode", "operator": "eq", "value": "enterprise_promise", "status": "supported" },
+        { "source": "fact", "key": "authority.boundaries_defined", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -10 },
+        { "dimension": "trust_governance", "authored_effect": -10 },
+        { "dimension": "business_value", "authored_effect": 5 }
+      ],
+      "signal": "Sponsor confirms the public launch expectation; scope and acceptance remain unresolved.",
+      "gate_implications": ["G1 exposure if award action is included"]
+    },
+    {
+      "rule_id": "TR-D01-03", "decision_id": "D01", "priority": 100, "stacking_group": "D01",
+      "when": { "all": [
+        { "source": "fact", "key": "mandate.release_mode", "operator": "eq", "value": "open_discovery", "status": "supported" },
+        { "source": "fact", "key": "mandate.decision_date_defined", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -10 },
+        { "dimension": "business_value", "authored_effect": -5 }
+      ],
+      "signal": "Steering group asks when discovery will produce a decision.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D02-01", "decision_id": "D02", "priority": 200, "stacking_group": "D02",
+      "when": { "all": [
+        { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "hypothesis", "status": "supported" },
+        { "source": "fact", "key": "value.baseline_owned", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "value.stop_rule_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "business_value", "authored_effect": 10 },
+        { "dimension": "financial_sustainability", "authored_effect": 5 }
+      ],
+      "signal": "Benefit claim is marked provisional pending baseline.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D02-02", "decision_id": "D02", "priority": 400, "stacking_group": "D02",
+      "when": { "all": [
+        { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "verified_commitment", "status": "supported" },
+        { "source": "fact", "key": "value.baseline_owned", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "business_value", "authored_effect": -5 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "signal": "The headline target enters the steering baseline without an attribution method.",
+      "gate_implications": ["G6 exposure; not a failure until contradictory evidence is available and retained"]
+    },
+    {
+      "rule_id": "TR-D03-01", "decision_id": "D03", "priority": 200, "stacking_group": "D03",
+      "when": { "all": [
+        { "source": "fact", "key": "investigation.targeted_request_count", "operator": "gte", "value": 1, "status": "supported" }
+      ] },
+      "effects": [],
+      "signal": "Evidence requests are accepted with linked decisions and due weeks.",
+      "gate_implications": ["Changes which evidence is reasonably obtainable; grants no direct health effect"]
+    },
+    {
+      "rule_id": "TR-D03-02", "decision_id": "D03", "priority": 100, "stacking_group": "D03",
+      "when": { "all": [
+        { "source": "fact", "key": "investigation.untargeted_request_count", "operator": "gte", "value": 1, "status": "supported" }
+      ] },
+      "effects": [],
+      "signal": "Request accepted, but no decision dependency is recorded.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D04-01", "decision_id": "D04", "priority": 200, "stacking_group": "release_scope",
+      "when": { "all": [
+        { "source": "fact", "key": "scope.release_mode", "operator": "eq", "value": "controlled_pilot", "status": "supported" },
+        { "source": "fact", "key": "scope.exclusions_defined", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "scope.exit_criteria_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "business_value", "authored_effect": 10 },
+        { "dimension": "delivery_confidence", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 5 }
+      ],
+      "signal": "Pilot boundary accepted for planning.",
+      "gate_implications": ["Clears pending G1 exposure when supplier commitments are excluded"]
+    },
+    {
+      "rule_id": "TR-D04-02", "decision_id": "D04", "priority": 100, "stacking_group": "release_scope",
+      "when": { "all": [
+        { "source": "fact", "key": "scope.release_mode", "operator": "eq", "value": "broad_european", "status": "supported" },
+        { "source": "fact", "key": "scope.dependency_boundary_defined", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -15 },
+        { "dimension": "user_adoption", "authored_effect": -5 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "signal": "The proposed release depends on unresolved sources, cohorts, and controls.",
+      "gate_implications": ["G1 exposure when a material supplier action is enabled"]
+    },
+    {
+      "rule_id": "TR-D04-03", "decision_id": "D04", "priority": 300, "stacking_group": "release_scope",
+      "when": { "all": [
+        { "source": "fact", "key": "scope.release_mode", "operator": "eq", "value": "reduced_scope", "status": "supported" },
+        { "source": "fact", "key": "value.workflow_value_measurable", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "business_value", "authored_effect": 5 },
+        { "dimension": "delivery_confidence", "authored_effect": 10 }
+      ],
+      "signal": "Document and rules value will be tested independently of recommendation.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D05-01", "decision_id": "D05", "priority": 200, "stacking_group": "architecture_pattern",
+      "when": { "all": [
+        { "source": "fact", "key": "architecture.pattern", "operator": "eq", "value": "decomposed_hybrid", "status": "supported" },
+        { "source": "fact", "key": "architecture.fallback_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 5 },
+        { "dimension": "financial_sustainability", "authored_effect": 5 }
+      ],
+      "signal": "Tasks now have separate technologies, failure boundaries, and fallbacks.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D05-02", "decision_id": "D05", "priority": 500, "stacking_group": "architecture_pattern",
+      "when": { "all": [
+        { "source": "fact", "key": "architecture.pattern", "operator": "eq", "value": "autonomous_end_to_end_agent", "status": "supported" },
+        { "source": "fact", "key": "architecture.fallback_defined", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": -10 },
+        { "dimension": "trust_governance", "authored_effect": -15 },
+        { "dimension": "financial_sustainability", "authored_effect": -5 }
+      ],
+      "signal": "The design couples extraction, judgment, and action under one failure boundary.",
+      "gate_implications": ["G1 exposure", "G7 exposure"]
+    },
+    {
+      "rule_id": "TR-D05-03", "decision_id": "D05", "priority": 400, "stacking_group": "target_validity",
+      "when": { "all": [
+        { "source": "fact", "key": "data.recommendation_target", "operator": "eq", "value": "historical_awards", "status": "supported" },
+        { "source": "evidence", "key": "EV-LABEL-01", "operator": "in", "value": ["available", "verified"] }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": -10 },
+        { "dimension": "data_readiness", "authored_effect": -15 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "signal": "Known target ambiguity remains in the recommendation design.",
+      "gate_implications": ["G6 exposure", "G4 exposure if the affected recommendation is released"]
+    },
+    {
+      "rule_id": "TR-D06-01", "decision_id": "D06", "priority": 200, "stacking_group": "source_scope",
+      "when": { "all": [
+        { "source": "fact", "key": "data.minimum_sources_selected", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "data.lineage_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "data_readiness", "authored_effect": 15 },
+        { "dimension": "delivery_confidence", "authored_effect": 10 }
+      ],
+      "signal": "Five purpose-critical sources form the first-release data contract.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D06-02", "decision_id": "D06", "priority": 100, "stacking_group": "source_scope",
+      "when": { "all": [
+        { "source": "fact", "key": "data.all_twelve_required_before_value", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -15 },
+        { "dimension": "financial_sustainability", "authored_effect": -5 }
+      ],
+      "signal": "Integration breadth is now on the critical path.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D06-03", "decision_id": "D06", "priority": 300, "stacking_group": "ingestion_route",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.temporary_path_controlled", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": 5 },
+        { "dimension": "data_readiness", "authored_effect": -5 },
+        { "dimension": "user_adoption", "authored_effect": -5 }
+      ],
+      "signal": "Temporary ingestion is viable but creates reconciliation and transition work.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D06-04", "decision_id": "D06", "priority": 400, "stacking_group": "data_claim_integrity",
+      "when": { "all": [
+        { "source": "fact", "key": "data.fitness_claim_status", "operator": "eq", "value": "contradicted", "status": "contradicted" }
+      ] },
+      "effects": [
+        { "dimension": "data_readiness", "authored_effect": -15 },
+        { "dimension": "trust_governance", "authored_effect": -10 }
+      ],
+      "signal": "Data fitness claim conflicts with profiling or label evidence.",
+      "gate_implications": ["G6 exposure"]
+    },
+    {
+      "rule_id": "TR-D07-01", "decision_id": "D07", "priority": 200, "stacking_group": "production_route",
+      "when": { "all": [
+        { "source": "fact", "key": "model.production_route_approved", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "model.fallback_defined", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 10 }
+      ],
+      "signal": "Approved model route is accepted for bounded tasks.",
+      "gate_implications": ["G2 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D07-02", "decision_id": "D07", "priority": 300, "stacking_group": "comparison_route",
+      "when": { "all": [
+        { "source": "fact", "key": "model.sanitized_external_test_only", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "model.production_route_approved", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": 5 },
+        { "dimension": "delivery_confidence", "authored_effect": 5 }
+      ],
+      "signal": "Model optionality is preserved without production-data exposure.",
+      "gate_implications": ["G2 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D07-03", "decision_id": "D07", "priority": 500, "stacking_group": "processing_breach",
+      "when": { "all": [
+        { "source": "fact", "key": "processing.prohibited_supplier_data_occurred", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -25 },
+        { "dimension": "technical_integrity", "authored_effect": -10 }
+      ],
+      "signal": "Unapproved production-data processing is recorded as a control breach.",
+      "gate_implications": ["G2 fail fact"]
+    },
+    {
+      "rule_id": "TR-D08-01", "decision_id": "D08", "priority": 200, "stacking_group": "D08",
+      "when": { "all": [
+        { "source": "fact", "key": "evaluation.segmented_thresholds_defined", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "evaluation.severity_defined", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "evaluation.abstention_defined", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "evaluation.authorized_owner_named", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": 15 },
+        { "dimension": "data_readiness", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 10 }
+      ],
+      "signal": "Release acceptance is defined by task and material cohort.",
+      "gate_implications": ["G3 pass evidence for applicable released capabilities"]
+    },
+    {
+      "rule_id": "TR-D08-02", "decision_id": "D08", "priority": 100, "stacking_group": "D08",
+      "when": { "all": [
+        { "source": "fact", "key": "evaluation.aggregate_only", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": -10 },
+        { "dimension": "data_readiness", "authored_effect": -10 }
+      ],
+      "signal": "Critical cohorts and error severity remain invisible to the release gate.",
+      "gate_implications": ["G3 exposure"]
+    },
+    {
+      "rule_id": "TR-D09-01", "decision_id": "D09", "priority": 200, "stacking_group": "delivery_sequence",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.thin_slice_frontloaded", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "delivery.api_review_started", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": 15 },
+        { "dimension": "technical_integrity", "authored_effect": 5 }
+      ],
+      "signal": "Critical-path evidence precedes UI completeness.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D09-02", "decision_id": "D09", "priority": 100, "stacking_group": "delivery_sequence",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.ui_first", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "delivery.integration_deferred", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -10 },
+        { "dimension": "technical_integrity", "authored_effect": -5 }
+      ],
+      "signal": "Visible progress increases while the access dependency remains unresolved.",
+      "gate_implications": ["G6 exposure if represented as ready"]
+    },
+    {
+      "rule_id": "TR-D09-03", "decision_id": "D09", "priority": 100, "stacking_group": "target_ingestion_state",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.manual_upload_target_state", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -5 },
+        { "dimension": "user_adoption", "authored_effect": -10 },
+        { "dimension": "data_readiness", "authored_effect": -5 }
+      ],
+      "signal": "Manual ingestion protects timing but weakens operating fit and lineage.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D10-01", "decision_id": "D10", "priority": 200, "stacking_group": "D10",
+      "when": { "all": [
+        { "source": "fact", "key": "resourcing.balanced_capacity", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "resourcing.year_one_run_cost_funded", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": 10 },
+        { "dimension": "financial_sustainability", "authored_effect": 10 },
+        { "dimension": "user_adoption", "authored_effect": 5 }
+      ],
+      "signal": "Evidence, controls, adoption, and operations have named capacity.",
+      "gate_implications": ["G5 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D10-02", "decision_id": "D10", "priority": 500, "stacking_group": "D10",
+      "when": { "all": [
+        { "source": "fact", "key": "resourcing.specialist_controls_underfunded", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "authority.material_risk_owner_authorized", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -10 },
+        { "dimension": "trust_governance", "authored_effect": -10 },
+        { "dimension": "user_adoption", "authored_effect": -5 }
+      ],
+      "signal": "Material responsibilities lack credible capacity or authority.",
+      "gate_implications": ["G5 exposure"]
+    },
+    {
+      "rule_id": "TR-D11-01", "decision_id": "D11", "priority": 200, "stacking_group": "workflow_fit",
+      "when": { "all": [
+        { "source": "fact", "key": "workflow.embedded", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "workflow.field_evidence_visible", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "authority.human_recommendation_retained", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "user_adoption", "authored_effect": 15 },
+        { "dimension": "trust_governance", "authored_effect": 10 }
+      ],
+      "signal": "Buyer review is embedded, traceable, and retains sourcing authority.",
+      "gate_implications": ["G1 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D11-02", "decision_id": "D11", "priority": 100, "stacking_group": "workflow_fit",
+      "when": { "all": [
+        { "source": "fact", "key": "workflow.duplicate_entry", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "user_adoption", "authored_effect": -10 },
+        { "dimension": "technical_integrity", "authored_effect": -5 }
+      ],
+      "signal": "Duplicate review and re-entry remain in the operating design.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D11-03", "decision_id": "D11", "priority": 500, "stacking_group": "authority_breach",
+      "when": { "all": [
+        { "source": "fact", "key": "authority.material_action_outside_delegation", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -25 }
+      ],
+      "signal": "The workflow enables a supplier commitment outside approved delegation.",
+      "gate_implications": ["G1 fail fact"]
+    },
+    {
+      "rule_id": "TR-D12-01", "decision_id": "D12", "priority": 200, "stacking_group": "economics_design",
+      "when": { "all": [
+        { "source": "fact", "key": "economics.unit_cost_model", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "economics.loop_limit", "operator": "exists", "status": "supported" },
+        { "source": "fact", "key": "economics.quality_aware_fallback", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "financial_sustainability", "authored_effect": 15 },
+        { "dimension": "technical_integrity", "authored_effect": 5 }
+      ],
+      "signal": "Cost is governed per accepted comparison, with task-level controls.",
+      "gate_implications": []
+    },
+    {
+      "rule_id": "TR-D12-02", "decision_id": "D12", "priority": 400, "stacking_group": "forecast_integrity",
+      "when": { "all": [
+        { "source": "fact", "key": "economics.one_call_estimate_retained", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "economics.review_loops_known", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "financial_sustainability", "authored_effect": -15 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "signal": "The operating forecast excludes observed reprocessing and review loops.",
+      "gate_implications": ["G6 exposure"]
+    },
+    {
+      "rule_id": "TR-D13-01", "decision_id": "D13", "priority": 200, "stacking_group": "D13",
+      "when": { "all": [
+        { "source": "fact", "key": "authority.human_award_authority_retained", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "authority.only_nonbinding_actions_enabled", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": 15 },
+        { "dimension": "business_value", "authored_effect": 5 }
+      ],
+      "signal": "Autonomy is bounded without removing workflow value.",
+      "gate_implications": ["G1 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D13-02", "decision_id": "D13", "priority": 500, "stacking_group": "D13",
+      "when": { "all": [
+        { "source": "fact", "key": "authority.autonomous_award_initiation", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -30 },
+        { "dimension": "business_value", "authored_effect": -10 }
+      ],
+      "signal": "Audit logging is present, but delegation policy is breached.",
+      "gate_implications": ["G1 fail fact"]
+    },
+    {
+      "rule_id": "TR-D13-03", "decision_id": "D13", "priority": 500, "stacking_group": "D13",
+      "when": { "all": [
+        { "source": "fact", "key": "authority.material_decision_delegated_to_delivery", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -15 }
+      ],
+      "signal": "No authorized owner accepts the commercial risk.",
+      "gate_implications": ["G5 fail candidate"]
+    },
+    {
+      "rule_id": "TR-D14-01", "decision_id": "D14", "priority": 200, "stacking_group": "security_response",
+      "when": { "all": [
+        { "source": "fact", "key": "security.ciso_concern_accepted", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "model.approved_route_reconciled_with_scope", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": 15 },
+        { "dimension": "technical_integrity", "authored_effect": 10 },
+        { "dimension": "delivery_confidence", "authored_effect": 5 }
+      ],
+      "signal": "The approved route and residual risk are reconciled with scope.",
+      "gate_implications": ["G2 pass evidence", "G5 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D14-02", "decision_id": "D14", "priority": 500, "stacking_group": "security_response",
+      "when": { "all": [
+        { "source": "fact", "key": "security.ciso_bypassed", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "processing.prohibited_supplier_data_occurred", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -25 },
+        { "dimension": "delivery_confidence", "authored_effect": -10 }
+      ],
+      "signal": "Sponsor escalation did not grant model or data permission.",
+      "gate_implications": ["G2 fail fact"]
+    },
+    {
+      "rule_id": "TR-D15-01", "decision_id": "D15", "priority": 300, "stacking_group": "D15",
+      "when": { "all": [
+        { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "withdrawn_rebased", "status": "supported" },
+        { "source": "fact", "key": "claim.correction_communicated", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": 15 },
+        { "dimension": "business_value", "authored_effect": 10 },
+        { "dimension": "financial_sustainability", "authored_effect": 10 }
+      ],
+      "signal": "The EUR 8 million headline is withdrawn and replaced with attributable hypotheses.",
+      "gate_implications": ["G6 recovery evidence"]
+    },
+    {
+      "rule_id": "TR-D15-02", "decision_id": "D15", "priority": 500, "stacking_group": "D15",
+      "when": { "all": [
+        { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "contradicted_retained", "status": "contradicted" },
+        { "source": "fact", "key": "claim.correction_communicated", "operator": "eq", "value": false, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "trust_governance", "authored_effect": -25 },
+        { "dimension": "business_value", "authored_effect": -15 },
+        { "dimension": "financial_sustainability", "authored_effect": -10 }
+      ],
+      "signal": "A material contradicted claim remains represented as verified.",
+      "gate_implications": ["G6 fail fact"]
+    },
+    {
+      "rule_id": "TR-D16-01", "decision_id": "D16", "priority": 300, "stacking_group": "dependency_replan",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.temporary_path_controlled", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "scope.cohort_narrowed_after_delay", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "delivery.transition_owner_named", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 5 },
+        { "dimension": "data_readiness", "authored_effect": -5 }
+      ],
+      "signal": "Week-16 learning is preserved through an approved temporary path.",
+      "gate_implications": ["G2 pass evidence", "G6 pass evidence when the temporary state is honestly labelled"]
+    },
+    {
+      "rule_id": "TR-D16-02", "decision_id": "D16", "priority": 500, "stacking_group": "dependency_replan",
+      "when": { "all": [
+        { "source": "fact", "key": "delivery.testing_compressed", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "claim.temporary_path_called_production_ready", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -15 },
+        { "dimension": "technical_integrity", "authored_effect": -10 },
+        { "dimension": "trust_governance", "authored_effect": -10 }
+      ],
+      "signal": "The original promise is retained by reducing readiness evidence.",
+      "gate_implications": ["G3 exposure", "G7 exposure", "G6 exposure"]
+    },
+    {
+      "rule_id": "TR-D17-01", "decision_id": "D17", "priority": 200, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "evaluation.failed_cohorts_contained", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "evaluation.retest_owner_named", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": 10 },
+        { "dimension": "trust_governance", "authored_effect": 10 },
+        { "dimension": "business_value", "authored_effect": -5 }
+      ],
+      "signal": "German and Czech complex formats are excluded and routed safely.",
+      "gate_implications": ["G4 pass evidence"]
+    },
+    {
+      "rule_id": "TR-D17-02", "decision_id": "D17", "priority": 500, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "evaluation.failed_material_cohorts_released", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "technical_integrity", "authored_effect": -25 },
+        { "dimension": "data_readiness", "authored_effect": -15 },
+        { "dimension": "trust_governance", "authored_effect": -20 }
+      ],
+      "signal": "Known commercial-field failures remain inside the release scope.",
+      "gate_implications": ["G4 fail fact"]
+    },
+    {
+      "rule_id": "TR-D18-01", "decision_id": "D18", "priority": 200, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "workflow.redesigned_after_rejection", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "workflow.shadow_or_assisted_mode", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "user_adoption", "authored_effect": 15 },
+        { "dimension": "delivery_confidence", "authored_effect": 5 },
+        { "dimension": "business_value", "authored_effect": -5 }
+      ],
+      "signal": "Release mode changes while workflow fit is retested.",
+      "gate_implications": ["G6 pass evidence when readiness claims are corrected"]
+    },
+    {
+      "rule_id": "TR-D18-02", "decision_id": "D18", "priority": 500, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "workflow.release_despite_verified_rejection", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "user_adoption", "authored_effect": -25 },
+        { "dimension": "business_value", "authored_effect": -15 },
+        { "dimension": "trust_governance", "authored_effect": -10 }
+      ],
+      "signal": "Technical acceptance proceeds despite contradictory usage evidence.",
+      "gate_implications": ["G6 fail candidate if represented as business-ready"]
+    },
+    {
+      "rule_id": "TR-D19-01", "decision_id": "D19", "priority": 200, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "economics.task_cost_tracing", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "economics.quality_preserved_during_containment", "operator": "eq", "value": true, "status": "supported" },
+        { "source": "fact", "key": "economics.reforecast_completed", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "financial_sustainability", "authored_effect": 15 },
+        { "dimension": "technical_integrity", "authored_effect": 5 }
+      ],
+      "signal": "Four-times cost is contained and unit economics will be revalidated.",
+      "gate_implications": ["G3 pass evidence when quality is preserved"]
+    },
+    {
+      "rule_id": "TR-D19-02", "decision_id": "D19", "priority": 500, "stacking_group": "crisis_response",
+      "when": { "all": [
+        { "source": "fact", "key": "economics.uncontrolled_or_silent_cap", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [
+        { "dimension": "financial_sustainability", "authored_effect": -20 },
+        { "dimension": "technical_integrity", "authored_effect": -10 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "signal": "Cost or quality remains uncontrolled under live usage.",
+      "gate_implications": ["G6 exposure", "G3 exposure"]
+    },
+    {
+      "rule_id": "TR-D20-01", "decision_id": "D20", "priority": 200, "stacking_group": "terminal_reconciliation",
+      "when": { "all": [
+        { "source": "fact", "key": "release.manifest_reconciled", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [],
+      "signal": "Final recommendation records included and excluded capabilities and conditions.",
+      "gate_implications": ["Resolves pending gate candidates without an automatic health bonus"]
+    },
+    {
+      "rule_id": "TR-D20-02", "decision_id": "D20", "priority": 500, "stacking_group": "unresolved_gate_condition",
+      "when": { "all": [
+        { "source": "fact", "key": "release.includes_failed_or_unresolved_material_condition", "operator": "eq", "value": true, "status": "supported" }
+      ] },
+      "effects": [],
+      "signal": "Final release claim conflicts with one or more readiness conditions.",
+      "gate_implications": ["Consolidates applicable fail candidates once per gate and subject"]
+    }
+  ]
+}
