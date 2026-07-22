@@ -480,7 +480,7 @@ Acceptance conditions:
 5. Run C creates the expected authority, permission, evaluation, containment, ownership, integrity, and operational-control fail candidates.
 6. The unsafe route cannot mask gate facts through high business or delivery health.
 7. At least one early weakness can be recovered, but its audit record remains.
-8. Two independent reviewers agree on fact extraction for at least 90% of material facts before rubric scoring begins.
+8. Two independent reviewers agree on fact extraction for at least 90% of material facts before rubric scoring begins. 
 
 ## 19. Open calibration issues
 
