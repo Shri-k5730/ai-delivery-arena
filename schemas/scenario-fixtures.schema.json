@@ -1,1 +1,295 @@
 
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Shri-k5730/ai-delivery-arena/schemas/scenario-fixtures.schema.json",
+  "title": "AI Delivery Arena scenario fixtures",
+  "oneOf": [
+    { "$ref": "#/$defs/scenarioArtifact" },
+    { "$ref": "#/$defs/evidenceArtifact" },
+    { "$ref": "#/$defs/transitionsArtifact" },
+    { "$ref": "#/$defs/crisesArtifact" },
+    { "$ref": "#/$defs/referenceRunsArtifact" }
+  ],
+  "$defs": {
+    "artifactHeader": {
+      "type": "object",
+      "required": ["artifact_type", "schema_version", "scenario_id", "scenario_version"],
+      "properties": {
+        "artifact_type": { "type": "string" },
+        "schema_version": { "const": "1.0.0" },
+        "scenario_id": { "const": "procurement-under-pressure" },
+        "scenario_version": { "const": "0.1.0" }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "required": ["dimension", "authored_effect"],
+      "properties": {
+        "dimension": {
+          "enum": [
+            "business_value",
+            "delivery_confidence",
+            "technical_integrity",
+            "data_readiness",
+            "trust_governance",
+            "financial_sustainability",
+            "user_adoption"
+          ]
+        },
+        "authored_effect": { "type": "number", "minimum": -30, "maximum": 30 }
+      },
+      "additionalProperties": false
+    },
+    "condition": {
+      "type": "object",
+      "required": ["source", "key", "operator"],
+      "properties": {
+        "source": { "enum": ["fact", "evidence", "event"] },
+        "key": { "type": "string", "minLength": 1 },
+        "operator": { "enum": ["eq", "in", "gte", "exists"] },
+        "value": {},
+        "status": { "enum": ["asserted", "supported", "contradicted", "superseded", "available", "verified"] }
+      },
+      "additionalProperties": false
+    },
+    "predicate": {
+      "type": "object",
+      "required": ["all"],
+      "properties": {
+        "all": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "any": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "none": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+      },
+      "additionalProperties": false
+    },
+    "fact": {
+      "type": "object",
+      "required": ["key", "value", "status"],
+      "properties": {
+        "key": { "type": "string", "minLength": 3 },
+        "value": {},
+        "status": { "enum": ["asserted", "supported", "contradicted", "superseded"] },
+        "evidence_refs": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
+    "gateExpectation": {
+      "type": "object",
+      "required": ["gate_id", "status", "reason"],
+      "properties": {
+        "gate_id": { "pattern": "^G[1-7]$" },
+        "status": { "enum": ["pass", "fail", "unresolved", "not_applicable"] },
+        "reason": { "type": "string", "minLength": 10 }
+      },
+      "additionalProperties": false
+    },
+    "scenarioArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/artifactHeader" },
+        {
+          "type": "object",
+          "required": [
+            "artifact_type",
+            "schema_version",
+            "scenario_id",
+            "scenario_version",
+            "title",
+            "status",
+            "locked_invariants",
+            "run_config",
+            "health_model",
+            "authority_map",
+            "stages",
+            "decisions",
+            "hidden_truth_ids",
+            "gate_ids"
+          ],
+          "properties": {
+            "artifact_type": { "const": "scenario" },
+            "schema_version": {},
+            "scenario_id": {},
+            "scenario_version": {},
+            "title": { "type": "string", "minLength": 1 },
+            "status": { "enum": ["paper_validated", "calibration", "released"] },
+            "locked_invariants": { "type": "array", "minItems": 3, "items": { "type": "string" } },
+            "run_config": {
+              "type": "object",
+              "required": ["duration_weeks", "budget_eur", "investigation_credits", "first_attempt_health_visibility", "randomness_allowed"],
+              "properties": {
+                "duration_weeks": { "const": 16 },
+                "budget_eur": { "const": 1200000 },
+                "investigation_credits": { "const": 10 },
+                "first_attempt_health_visibility": { "const": false },
+                "randomness_allowed": { "const": false }
+              },
+              "additionalProperties": false
+            },
+            "health_model": {
+              "type": "object",
+              "required": ["dimensions", "initial_state", "positive_formula", "negative_formula", "precision"],
+              "properties": {
+                "dimensions": { "type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": { "type": "string" } },
+                "initial_state": { "type": "object", "minProperties": 7, "maxProperties": 7, "additionalProperties": { "type": "number", "minimum": 0, "maximum": 100 } },
+                "positive_formula": { "const": "h + e * (100 - h) / 100" },
+                "negative_formula": { "const": "h + e * h / 100" },
+                "precision": { "type": "integer", "minimum": 4 }
+              },
+              "additionalProperties": false
+            },
+            "authority_map": { "type": "array", "minItems": 6, "items": { "type": "object", "required": ["role_id", "authority"], "properties": { "role_id": { "type": "string" }, "authority": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false } },
+            "stages": { "type": "array", "minItems": 5, "maxItems": 5, "items": { "type": "object", "required": ["id", "decision_ids", "nominal_weeks"], "properties": { "id": { "enum": ["frame", "design", "plan", "defend", "operate"] }, "decision_ids": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "pattern": "^D[0-9]{2}$" } }, "nominal_weeks": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer", "minimum": 0, "maximum": 16 } } }, "additionalProperties": false } },
+            "decisions": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "object", "required": ["id", "stage", "week", "title"], "properties": { "id": { "pattern": "^D[0-9]{2}$" }, "stage": { "enum": ["frame", "design", "plan", "defend", "operate"] }, "week": { "type": "integer", "minimum": 0, "maximum": 16 }, "title": { "type": "string" } }, "additionalProperties": false } },
+            "hidden_truth_ids": { "type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true, "items": { "pattern": "^HT-[0-9]{2}$" } },
+            "gate_ids": { "type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": { "pattern": "^G[1-7]$" } }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "evidenceArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/artifactHeader" },
+        {
+          "type": "object",
+          "required": ["artifact_type", "schema_version", "scenario_id", "scenario_version", "state_machine", "items"],
+          "properties": {
+            "artifact_type": { "const": "evidence_catalog" },
+            "schema_version": {},
+            "scenario_id": {},
+            "scenario_version": {},
+            "state_machine": { "type": "array", "items": { "type": "string" } },
+            "items": {
+              "type": "array",
+              "minItems": 15,
+              "maxItems": 15,
+              "items": {
+                "type": "object",
+                "required": ["id", "cost", "lead_time_weeks", "reveal", "hidden_truth_ids", "latest_useful_decisions", "initial_state"],
+                "properties": {
+                  "id": { "pattern": "^EV-[A-Z]+-[0-9]{2}$" },
+                  "cost": { "type": "integer", "minimum": 0, "maximum": 2 },
+                  "lead_time_weeks": { "type": "integer", "minimum": 0, "maximum": 2 },
+                  "reveal": { "type": "string", "minLength": 5 },
+                  "hidden_truth_ids": { "type": "array", "items": { "pattern": "^HT-[0-9]{2}$" } },
+                  "latest_useful_decisions": { "type": "array", "items": { "pattern": "^D[0-9]{2}$" } },
+                  "initial_state": { "enum": ["locked", "requestable", "available"] }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "transitionsArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/artifactHeader" },
+        {
+          "type": "object",
+          "required": ["artifact_type", "schema_version", "scenario_id", "scenario_version", "arbitration", "rules"],
+          "properties": {
+            "artifact_type": { "const": "transitions" },
+            "schema_version": {},
+            "scenario_id": {},
+            "scenario_version": {},
+            "arbitration": { "type": "object" },
+            "rules": {
+              "type": "array",
+              "minItems": 49,
+              "maxItems": 49,
+              "items": {
+                "type": "object",
+                "required": ["rule_id", "decision_id", "priority", "stacking_group", "when", "effects", "signal", "gate_implications"],
+                "properties": {
+                  "rule_id": { "pattern": "^TR-D[0-9]{2}-[0-9]{2}$" },
+                  "decision_id": { "pattern": "^D[0-9]{2}$" },
+                  "priority": { "enum": [100, 200, 300, 400, 500] },
+                  "stacking_group": { "type": "string", "minLength": 2 },
+                  "when": { "$ref": "#/$defs/predicate" },
+                  "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+                  "signal": { "type": "string" },
+                  "gate_implications": { "type": "array", "items": { "type": "string" } }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "crisesArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/artifactHeader" },
+        {
+          "type": "object",
+          "required": ["artifact_type", "schema_version", "scenario_id", "scenario_version", "event_order", "crises"],
+          "properties": {
+            "artifact_type": { "const": "crises" },
+            "schema_version": {},
+            "scenario_id": {},
+            "scenario_version": {},
+            "event_order": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "pattern": "^C0[1-6]$" } },
+            "crises": {
+              "type": "array",
+              "minItems": 6,
+              "maxItems": 6,
+              "items": {
+                "type": "object",
+                "required": ["id", "title", "trigger", "linked_decision", "fixed_observation", "base_effects", "preparedness"],
+                "properties": {
+                  "id": { "pattern": "^C0[1-6]$" },
+                  "title": { "type": "string" },
+                  "trigger": { "type": "object", "required": ["week", "after"], "properties": { "week": { "type": "integer", "minimum": 0, "maximum": 16 }, "after": { "type": "string" } }, "additionalProperties": false },
+                  "linked_decision": { "pattern": "^D(1[4-9])$" },
+                  "fixed_observation": { "type": "string", "minLength": 10 },
+                  "base_effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+                  "preparedness": { "type": "object", "required": ["prepared", "partial", "unprepared"], "properties": { "prepared": { "type": "object", "required": ["when", "effects"], "properties": { "when": { "$ref": "#/$defs/predicate" }, "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } } }, "additionalProperties": false }, "partial": { "type": "object", "required": ["when", "effects"], "properties": { "when": { "$ref": "#/$defs/predicate" }, "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } } }, "additionalProperties": false }, "unprepared": { "type": "object", "required": ["when", "effects"], "properties": { "when": { "$ref": "#/$defs/predicate" }, "effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } } }, "additionalProperties": false } }, "additionalProperties": false }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "referenceRunsArtifact": {
+      "allOf": [
+        { "$ref": "#/$defs/artifactHeader" },
+        {
+          "type": "object",
+          "required": ["artifact_type", "schema_version", "scenario_id", "scenario_version", "runs"],
+          "properties": {
+            "artifact_type": { "const": "reference_runs" },
+            "schema_version": {},
+            "scenario_id": {},
+            "scenario_version": {},
+            "runs": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "required": ["run_id", "label", "terminal_route", "investigation_schedule", "decisions", "crisis_preparedness", "expected_terminal_health", "expected_gates"],
+                "properties": {
+                  "run_id": { "pattern": "^RR-[ABC]$" },
+                  "label": { "type": "string" },
+                  "terminal_route": { "enum": ["conditional_release", "reduced_scope", "full_release"] },
+                  "investigation_schedule": { "type": "array", "items": { "type": "object", "required": ["evidence_id", "request_week", "arrival_week", "cost", "first_use"], "properties": { "evidence_id": { "pattern": "^EV-[A-Z]+-[0-9]{2}$" }, "request_week": { "type": "integer", "minimum": 0, "maximum": 16 }, "arrival_week": { "type": "integer", "minimum": 0, "maximum": 16 }, "cost": { "type": "integer", "minimum": 0, "maximum": 2 }, "first_use": { "anyOf": [{ "pattern": "^D[0-9]{2}$" }, { "const": "not_reconciled" }, { "const": "selective" }] } }, "additionalProperties": false } },
+                  "decisions": { "type": "array", "minItems": 20, "maxItems": 20, "items": { "type": "object", "required": ["decision_id", "evidence_id", "summary", "facts", "selected_rule_ids"], "properties": { "decision_id": { "pattern": "^D[0-9]{2}$" }, "evidence_id": { "pattern": "^RR-[ABC]-D[0-9]{2}-01$" }, "summary": { "type": "string", "minLength": 10 }, "facts": { "type": "array", "items": { "$ref": "#/$defs/fact" } }, "selected_rule_ids": { "type": "array", "items": { "pattern": "^TR-D[0-9]{2}-[0-9]{2}$" } } }, "additionalProperties": false } },
+                  "crisis_preparedness": { "type": "array", "minItems": 6, "maxItems": 6, "items": { "type": "object", "required": ["crisis_id", "status", "supporting_refs"], "properties": { "crisis_id": { "pattern": "^C0[1-6]$" }, "status": { "enum": ["prepared", "partial", "unprepared"] }, "supporting_refs": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false } },
+                  "expected_terminal_health": { "type": "object", "minProperties": 7, "maxProperties": 7, "additionalProperties": { "type": "number", "minimum": 0, "maximum": 100 } },
+                  "expected_gates": { "type": "array", "minItems": 7, "maxItems": 7, "items": { "$ref": "#/$defs/gateExpectation" } }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
