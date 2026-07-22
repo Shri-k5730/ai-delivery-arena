@@ -1,1 +1,285 @@
 
+{
+  "artifact_type": "crises",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "event_order": ["C01", "C02", "C03", "C04", "C05", "C06"],
+  "crises": [
+    {
+      "id": "C01",
+      "title": "Model approval blocked",
+      "trigger": { "week": 9, "after": "D13" },
+      "linked_decision": "D14",
+      "fixed_observation": "The external model will not be approved before the pilot; the CISO asks why generative AI is necessary.",
+      "base_effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -5 },
+        { "dimension": "trust_governance", "authored_effect": -5 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "model.production_route_approved", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "architecture.fallback_defined", "operator": "eq", "value": true, "status": "supported" }
+            ],
+            "any": [
+              { "source": "evidence", "key": "EV-MODEL-01", "operator": "in", "value": ["verified"] },
+              { "source": "fact", "key": "model.task_adequacy_evidence_recorded", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": []
+        },
+        "partial": {
+          "when": {
+            "all": [],
+            "any": [
+              { "source": "fact", "key": "model.production_route_approved", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "architecture.fallback_defined", "operator": "eq", "value": true, "status": "supported" }
+            ],
+            "none": [
+              { "source": "fact", "key": "processing.prohibited_supplier_data_occurred", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "delivery_confidence", "authored_effect": -5 },
+            { "dimension": "trust_governance", "authored_effect": -5 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "delivery_confidence", "authored_effect": -5 },
+            { "dimension": "trust_governance", "authored_effect": -5 },
+            { "dimension": "technical_integrity", "authored_effect": -5 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C02",
+      "title": "Benefit claim challenged",
+      "trigger": { "week": 9, "after": "D14" },
+      "linked_decision": "D15",
+      "fixed_observation": "Finance proves that the EUR 8 million claim includes planned negotiation and unverified avoidance.",
+      "base_effects": [
+        { "dimension": "business_value", "authored_effect": -10 },
+        { "dimension": "financial_sustainability", "authored_effect": -5 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "hypothesis", "status": "supported" },
+              { "source": "fact", "key": "value.baseline_owned", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "evidence", "key": "EV-FINANCE-01", "operator": "in", "value": ["available", "verified"] }
+            ]
+          },
+          "effects": [
+            { "dimension": "business_value", "authored_effect": -10 },
+            { "dimension": "financial_sustainability", "authored_effect": -5 },
+            { "dimension": "trust_governance", "authored_effect": 5 }
+          ]
+        },
+        "partial": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "value.claim_eur8m_status", "operator": "eq", "value": "hypothesis", "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "business_value", "authored_effect": -10 },
+            { "dimension": "financial_sustainability", "authored_effect": -5 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "business_value", "authored_effect": -10 },
+            { "dimension": "financial_sustainability", "authored_effect": -5 },
+            { "dimension": "trust_governance", "authored_effect": -10 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C03",
+      "title": "Source API delayed",
+      "trigger": { "week": 10, "after": "D15" },
+      "linked_decision": "D16",
+      "fixed_observation": "The security review completes around week 15, so meaningful integrated pilot evidence cannot finish by week 16.",
+      "base_effects": [
+        { "dimension": "delivery_confidence", "authored_effect": -15 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "delivery.api_review_started", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "delivery.temporary_path_controlled", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "delivery.replan_trigger_defined", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "delivery_confidence", "authored_effect": -5 }
+          ]
+        },
+        "partial": {
+          "when": {
+            "all": [],
+            "any": [
+              { "source": "fact", "key": "delivery.api_review_started", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "delivery.temporary_path_controlled", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "delivery.replan_trigger_defined", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "delivery_confidence", "authored_effect": -15 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "delivery_confidence", "authored_effect": -15 },
+            { "dimension": "business_value", "authored_effect": -5 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "title": "Segmented quality failure",
+      "trigger": { "week": 13, "after": "D16" },
+      "linked_decision": "D17",
+      "fixed_observation": "Aggregate field accuracy is 93 percent; German and Czech complex quotations achieve 78 percent with material commercial errors, while English simple quotations achieve 96 percent.",
+      "base_effects": [
+        { "dimension": "technical_integrity", "authored_effect": -15 },
+        { "dimension": "data_readiness", "authored_effect": -10 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "evaluation.segmented_thresholds_defined", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "evaluation.severity_defined", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "evaluation.abstention_defined", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "evaluation.cohort_routing_owner_named", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "technical_integrity", "authored_effect": -15 },
+            { "dimension": "data_readiness", "authored_effect": -10 }
+          ]
+        },
+        "partial": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "evaluation.segmented_thresholds_defined", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "technical_integrity", "authored_effect": -15 },
+            { "dimension": "data_readiness", "authored_effect": -10 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "technical_integrity", "authored_effect": -15 },
+            { "dimension": "data_readiness", "authored_effect": -10 },
+            { "dimension": "trust_governance", "authored_effect": -5 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "title": "Workflow rejection",
+      "trigger": { "week": 14, "after": "D17" },
+      "linked_decision": "D18",
+      "fixed_observation": "The separate workflow creates duplicate review and re-entry; only 30 percent of buyers intend to use it for live sourcing.",
+      "base_effects": [
+        { "dimension": "user_adoption", "authored_effect": -15 },
+        { "dimension": "business_value", "authored_effect": -5 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "workflow.embedded", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "workflow.adoption_threshold_defined", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "workflow.usability_test_completed", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "user_adoption", "authored_effect": -5 },
+            { "dimension": "business_value", "authored_effect": -5 }
+          ]
+        },
+        "partial": {
+          "when": {
+            "all": [],
+            "any": [
+              { "source": "fact", "key": "workflow.embedded", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "workflow.usability_test_completed", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "user_adoption", "authored_effect": -15 },
+            { "dimension": "business_value", "authored_effect": -5 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "user_adoption", "authored_effect": -15 },
+            { "dimension": "business_value", "authored_effect": -5 },
+            { "dimension": "delivery_confidence", "authored_effect": -5 }
+          ]
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "title": "Cost loop overrun",
+      "trigger": { "week": 15, "after": "D18" },
+      "linked_decision": "D19",
+      "fixed_observation": "Shadow inference cost is four times plan because of document reprocessing and regeneration during reviewer conversations.",
+      "base_effects": [
+        { "dimension": "financial_sustainability", "authored_effect": -15 }
+      ],
+      "preparedness": {
+        "prepared": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "economics.unit_cost_model", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "operations.cost_monitoring_active", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "operations.presteering_cost_alert_recorded", "operator": "eq", "value": true, "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "financial_sustainability", "authored_effect": -5 }
+          ]
+        },
+        "partial": {
+          "when": {
+            "all": [
+              { "source": "fact", "key": "economics.unit_cost_model", "operator": "eq", "value": true, "status": "supported" },
+              { "source": "fact", "key": "economics.loop_limit", "operator": "exists", "status": "supported" }
+            ]
+          },
+          "effects": [
+            { "dimension": "financial_sustainability", "authored_effect": -15 }
+          ]
+        },
+        "unprepared": {
+          "when": { "all": [] },
+          "effects": [
+            { "dimension": "financial_sustainability", "authored_effect": -15 },
+            { "dimension": "technical_integrity", "authored_effect": -5 }
+          ]
+        }
+      }
+    }
+  ]
+}
