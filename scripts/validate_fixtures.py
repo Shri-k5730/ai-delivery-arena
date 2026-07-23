@@ -1,11 +1,10 @@
-
 #!/usr/bin/env python3
 """Validate AI Delivery Arena scenario fixtures using only the Python standard library.
 
 The validator checks the published JSON contract, cross-file references, investigation
 timing, rule arbitration, crisis preparedness, and exact deterministic replay of all
-reference runs. It intentionally does not score participant competence or adjudicate
-critical gates.
+executable runs. It independently resolves structured critical gates but intentionally
+does not score participant competence.
 """
 
 from __future__ import annotations
@@ -14,6 +13,7 @@ import json
 import math
 import sys
 from collections import defaultdict
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -70,16 +70,20 @@ def check_structural_contract(
     evidence: dict[str, Any],
     transitions: dict[str, Any],
     crises: dict[str, Any],
+    gates: dict[str, Any],
     reference_runs: dict[str, Any],
+    adversarial_runs: dict[str, Any],
 ) -> None:
     require(schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema", "schema draft mismatch")
-    require("$defs" in schema and "oneOf" in schema, "schema must expose definitions and artifact variants")
+    require("$defs" in schema and len(schema.get("oneOf", [])) == 7, "schema must expose seven artifact variants")
 
     check_header(scenario, "scenario", "scenario.json")
     check_header(evidence, "evidence_catalog", "evidence.json")
     check_header(transitions, "transitions", "transitions.json")
     check_header(crises, "crises", "crises.json")
+    check_header(gates, "gates", "gates.json")
     check_header(reference_runs, "reference_runs", "reference-runs.json")
+    check_header(adversarial_runs, "adversarial_runs", "adversarial-runs.json")
 
     dimensions = scenario["health_model"]["dimensions"]
     require(len(dimensions) == 7 and len(set(dimensions)) == 7, "scenario must define seven unique health dimensions")
@@ -124,6 +128,18 @@ def check_structural_contract(
             for effect in crisis["preparedness"][level]["effects"]:
                 require(effect["dimension"] in dimensions, f"{crisis['id']}: unknown effect dimension")
 
+    gate_ids = unique_ids(gates["gates"], "gate_id", "gates")
+    require(gate_ids == set(scenario["gate_ids"]), "gate registry must define G1-G7 exactly")
+    require(
+        gates["resolution_precedence"] == ["fail", "pass", "not_applicable", "unresolved"],
+        "gate precedence mismatch",
+    )
+    for gate in gates["gates"]:
+        require(
+            set(gate["treatment"]["dimension_caps"]).issubset(set(dimensions)),
+            f"{gate['gate_id']}: unknown dimension cap",
+        )
+
     runs = reference_runs["runs"]
     require(len(runs) == 3, "exactly three reference runs are required")
     require(unique_ids(runs, "run_id", "reference runs") == {"RR-A", "RR-B", "RR-C"}, "reference runs must be RR-A, RR-B, and RR-C")
@@ -134,6 +150,15 @@ def check_structural_contract(
         require([item["crisis_id"] for item in run["crisis_preparedness"]] == [f"C{i:02d}" for i in range(1, 7)], f"{run['run_id']}: preparedness order mismatch")
         require(set(run["expected_terminal_health"]) == set(dimensions), f"{run['run_id']}: terminal health keys mismatch")
         require({gate["gate_id"] for gate in run["expected_gates"]} == set(scenario["gate_ids"]), f"{run['run_id']}: expected gates mismatch")
+
+    adversarial = adversarial_runs["runs"]
+    require(len(adversarial) == 1, "exactly one adversarial run is required")
+    require(adversarial[0]["run_id"] == "PT-09", "adversarial run must be PT-09")
+    require(adversarial[0]["base_run_id"] in {"RR-A", "RR-B", "RR-C"}, "PT-09 base run is invalid")
+    require(len(adversarial[0]["decision_overrides"]) == 1, "PT-09 must contain one isolated decision override")
+    override = adversarial[0]["decision_overrides"][0]
+    require(override["decision_id"] == override["record"]["decision_id"], "PT-09 override decision mismatch")
+    require({gate["gate_id"] for gate in adversarial[0]["expected_gates"]} == set(scenario["gate_ids"]), "PT-09 expected gates mismatch")
 
 
 def evidence_state(
@@ -240,6 +265,7 @@ def validate_reference_run(
     evidence: dict[str, Any],
     transitions: dict[str, Any],
     crises: dict[str, Any],
+    gates: dict[str, Any],
 ) -> dict[str, float]:
     run_id = run["run_id"]
     decision_by_id = {item["id"]: item for item in scenario["decisions"]}
@@ -269,15 +295,17 @@ def validate_reference_run(
     health = {key: float(value) for key, value in scenario["health_model"]["initial_state"].items()}
     fact_history: list[dict[str, Any]] = []
     completed_decisions: set[str] = set()
+    run_evidence_ids: set[str] = set()
 
     for record in run["decisions"]:
         decision_id = record["decision_id"]
         week = decision_by_id[decision_id]["week"]
         completed_decisions.add(decision_id)
+        run_evidence_ids.add(record["evidence_id"])
 
         for fact in record["facts"]:
             for ref in fact.get("evidence_refs", []):
-                if ref.startswith("EV-CRISIS-") or ref.startswith("RR-"):
+                if ref.startswith("EV-CRISIS-") or ref in run_evidence_ids:
                     continue
                 require(ref in evidence_by_id, f"{run_id}/{decision_id}: unknown evidence ref {ref}")
                 state = evidence_state(ref, week, completed_decisions, evidence_by_id, schedule_by_id)
@@ -320,7 +348,92 @@ def validate_reference_run(
     expected = run["expected_terminal_health"]
     for dimension, expected_value in expected.items():
         require(math.isclose(rounded[dimension], expected_value, abs_tol=0.05), f"{run_id}: {dimension} replayed {rounded[dimension]} != expected {expected_value}")
+
+    terminal_facts = fact_history + [
+        {
+            "key": "run.terminal_route",
+            "value": run["terminal_route"],
+            "status": "supported",
+            "evidence_refs": [],
+        }
+    ]
+    facts = current_fact_map(terminal_facts)
+    computed_gates: dict[str, str] = {}
+    for gate in gates["gates"]:
+        context = {
+            "facts": facts,
+            "week": scenario["run_config"]["duration_weeks"],
+            "completed_decisions": completed_decisions,
+            "evidence_by_id": evidence_by_id,
+            "schedule_by_id": schedule_by_id,
+        }
+        matches = lambda predicate: predicate_matches(  # noqa: E731
+            predicate,
+            context["facts"],
+            context["week"],
+            context["completed_decisions"],
+            context["evidence_by_id"],
+            context["schedule_by_id"],
+        )
+        if not matches(gate["applicable_when"]):
+            status = "not_applicable"
+        elif matches(gate["fail_when"]):
+            status = "fail"
+        elif matches(gate["pass_when"]):
+            status = "pass"
+        else:
+            status = "unresolved"
+        computed_gates[gate["gate_id"]] = status
+
+    expected_gates = {
+        item["gate_id"]: item["status"] for item in run["expected_gates"]
+    }
+    require(
+        computed_gates == expected_gates,
+        f"{run_id}: computed gates {computed_gates} != expected {expected_gates}",
+    )
     return rounded
+
+
+def materialize_adversarial_run(
+    definition: dict[str, Any],
+    reference_runs: dict[str, Any],
+) -> dict[str, Any]:
+    base = next(
+        run
+        for run in reference_runs["runs"]
+        if run["run_id"] == definition["base_run_id"]
+    )
+    source_run_id = base["run_id"]
+    target_run_id = definition["run_id"]
+    run = deepcopy(base)
+    run["run_id"] = target_run_id
+    run["label"] = definition["label"]
+    run["terminal_route"] = definition["terminal_route"]
+    run["expected_terminal_health"] = definition["expected_terminal_health"]
+    run["expected_gates"] = definition["expected_gates"]
+
+    for record in run["decisions"]:
+        record["evidence_id"] = record["evidence_id"].replace(
+            source_run_id, target_run_id, 1
+        )
+        for fact in record["facts"]:
+            fact["evidence_refs"] = [
+                ref.replace(source_run_id, target_run_id, 1)
+                if ref.startswith(source_run_id)
+                else ref
+                for ref in fact.get("evidence_refs", [])
+            ]
+
+    override_by_id = {
+        item["decision_id"]: item["record"]
+        for item in definition["decision_overrides"]
+    }
+    run["decisions"] = [
+        deepcopy(override_by_id.get(record["decision_id"], record))
+        for record in run["decisions"]
+    ]
+    return run
 
 
 def main() -> int:
@@ -330,23 +443,46 @@ def main() -> int:
         evidence = load_json(FIXTURE_DIR / "evidence.json")
         transitions = load_json(FIXTURE_DIR / "transitions.json")
         crises = load_json(FIXTURE_DIR / "crises.json")
+        gates = load_json(FIXTURE_DIR / "gates.json")
         reference_runs = load_json(FIXTURE_DIR / "reference-runs.json")
+        adversarial_runs = load_json(FIXTURE_DIR / "adversarial-runs.json")
 
-        check_structural_contract(schema, scenario, evidence, transitions, crises, reference_runs)
+        check_structural_contract(
+            schema,
+            scenario,
+            evidence,
+            transitions,
+            crises,
+            gates,
+            reference_runs,
+            adversarial_runs,
+        )
+        executable_runs = reference_runs["runs"] + [
+            materialize_adversarial_run(definition, reference_runs)
+            for definition in adversarial_runs["runs"]
+        ]
         results = {
-            run["run_id"]: validate_reference_run(run, scenario, evidence, transitions, crises)
-            for run in reference_runs["runs"]
+            run["run_id"]: validate_reference_run(
+                run,
+                scenario,
+                evidence,
+                transitions,
+                crises,
+                gates,
+            )
+            for run in executable_runs
         }
     except (KeyError, TypeError, ValidationError) as exc:
         print(f"FIXTURE VALIDATION FAILED: {exc}", file=sys.stderr)
         return 1
 
     print("Fixture validation passed")
-    print("  artifacts: 5")
+    print("  artifacts: 7")
     print("  evidence items: 15")
     print("  transition rules: 49")
     print("  crises: 6")
-    print("  reference decisions: 60")
+    print("  gates: 7")
+    print("  executable decisions: 80")
     for run_id, terminal in results.items():
         values = " / ".join(f"{value:.1f}" for value in terminal.values())
         print(f"  {run_id}: {values}")

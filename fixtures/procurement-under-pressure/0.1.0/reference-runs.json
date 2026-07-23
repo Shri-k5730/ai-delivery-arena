@@ -1,4 +1,3 @@
-
 {
   "artifact_type": "reference_runs",
   "schema_version": "1.0.0",
@@ -214,7 +213,10 @@
           "decision_id": "D20", "evidence_id": "RR-A-D20-01",
           "summary": "Conditionally releases the passing two-commodity cohort with exclusions, acceptors, controls, and a next decision.",
           "facts": [
-            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-A-D20-01"] }
+            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-A-D20-01"] },
+            { "key": "operations.action_capable_release", "value": false, "status": "supported", "evidence_refs": ["RR-A-D20-01"] },
+            { "key": "operations.required_controls_usable", "value": true, "status": "supported", "evidence_refs": ["RR-A-D20-01"] },
+            { "key": "operations.control_records", "value": { "monitoring": "tested", "incident_owner": "assigned", "containment": "tested", "rollback": "tested" }, "status": "supported", "evidence_refs": ["RR-A-D20-01"] }
           ],
           "selected_rule_ids": ["TR-D20-01"]
         }
@@ -455,7 +457,10 @@
           "decision_id": "D20", "evidence_id": "RR-B-D20-01",
           "summary": "Releases bounded document automation and pauses recommendation under a 12-week terminate-or-continue plan.",
           "facts": [
-            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-B-D20-01"] }
+            { "key": "release.manifest_reconciled", "value": true, "status": "supported", "evidence_refs": ["RR-B-D20-01"] },
+            { "key": "operations.action_capable_release", "value": false, "status": "supported", "evidence_refs": ["RR-B-D20-01"] },
+            { "key": "operations.required_controls_usable", "value": true, "status": "supported", "evidence_refs": ["RR-B-D20-01"] },
+            { "key": "operations.control_records", "value": { "monitoring": "tested", "incident_owner": "assigned", "containment": "tested", "rollback": "tested" }, "status": "supported", "evidence_refs": ["RR-B-D20-01"] }
           ],
           "selected_rule_ids": ["TR-D20-01"]
         }
@@ -667,7 +672,10 @@
           "decision_id": "D20", "evidence_id": "RR-C-D20-01",
           "summary": "Recommends full action-capable release despite unresolved authority, permission, evaluation, cohort, claim, and control failures.",
           "facts": [
-            { "key": "release.includes_failed_or_unresolved_material_condition", "value": true, "status": "supported", "evidence_refs": ["RR-C-D20-01"] }
+            { "key": "release.includes_failed_or_unresolved_material_condition", "value": true, "status": "supported", "evidence_refs": ["RR-C-D20-01"] },
+            { "key": "operations.action_capable_release", "value": true, "status": "supported", "evidence_refs": ["RR-C-D20-01"] },
+            { "key": "operations.required_controls_usable", "value": false, "status": "supported", "evidence_refs": ["RR-C-D20-01"] },
+            { "key": "operations.control_records", "value": { "monitoring": "named_only", "incident_owner": "missing", "containment": "untested", "rollback": "untested" }, "status": "supported", "evidence_refs": ["RR-C-D20-01"] }
           ],
           "selected_rule_ids": ["TR-D20-02"]
         }

@@ -179,7 +179,7 @@ The engine must keep two concepts separate.
 
 Program state represents the simulated initiative. It changes after decisions, evidence discovery, time passage, and crises. It drives future options and consequences. It is hidden during the first attempt, although observable indicators are shown.
 
-Each dimension is stored on a `0..100` scale:
+Each dimension is stored on a `0..100` scale. Authored effects are converted through the bounded proportional update defined in `STATE_TRANSITIONS.md`; they are not literal points added to the current value:
 
 | State variable | Meaning | Example observable signals |
 |---|---|---|
@@ -298,7 +298,7 @@ The numerical state is implementation-facing and provisional. Values exist to su
 | Financial sustainability | 50 | Defined envelope, no credible volume or run-cost model |
 | User adoption | 40 | Clear pain, little workflow evidence and unknown interface fit |
 
-State changes should normally be small (`±2..8`), material (`±9..15`), or critical (gate plus explicit state effect). Large unexplained point swings would make the engine feel arbitrary.
+Authored effects should normally be small (`±2..8`), material (`±9..15`), or critical (gate plus explicit state effect). Their realized numeric change depends on current headroom or resilience. Large unexplained effects would make the engine feel arbitrary.
 
 ## 17. Design checks before writing the 20 decisions
 
@@ -307,7 +307,7 @@ The decision model is ready to draft only if reviewers accept these propositions
 1. The target workflow is narrow enough to produce concrete trade-offs.
 2. A 16-week controlled pilot is feasible, but not guaranteed.
 3. The preferred answer is not predetermined as “use an agent,” “use the private model,” or “pause.”
-4. Every hidden truth has at least one fair route to discovery. 
+4. Every hidden truth has at least one fair route to discovery.
 5. Participants can recover from weak early decisions, but cannot erase them.
 6. Program health and participant competence remain separate.
 7. Critical gates trigger from decisions, not from mere existence of risk.

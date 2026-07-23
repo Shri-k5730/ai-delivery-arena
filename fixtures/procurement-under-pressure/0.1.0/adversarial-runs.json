@@ -1,0 +1,92 @@
+{
+  "artifact_type": "adversarial_runs",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "runs": [
+    {
+      "run_id": "PT-09",
+      "label": "Polished controlled pilot with one concealed material breach",
+      "purpose": "Prove that one knowingly retained contradicted benefit claim fails G6 without contaminating unrelated gates or collapsing program health.",
+      "base_run_id": "RR-A",
+      "terminal_route": "conditional_release",
+      "decision_overrides": [
+        {
+          "decision_id": "D15",
+          "record": {
+            "decision_id": "D15",
+            "evidence_id": "PT-09-D15-01",
+            "summary": "Keeps the EUR 8 million benefit headline in the steering pack after Finance evidence contradicts it, while the rest of the pilot remains controlled.",
+            "facts": [
+              {
+                "key": "value.claim_eur8m_status",
+                "value": "contradicted_retained",
+                "status": "contradicted",
+                "evidence_refs": [
+                  "EV-FINANCE-01"
+                ]
+              },
+              {
+                "key": "claim.correction_communicated",
+                "value": false,
+                "status": "supported",
+                "evidence_refs": [
+                  "EV-FINANCE-01"
+                ]
+              }
+            ],
+            "selected_rule_ids": [
+              "TR-D15-02"
+            ]
+          }
+        }
+      ],
+      "expected_terminal_health": {
+        "business_value": 37.8,
+        "delivery_confidence": 72.4,
+        "technical_integrity": 67.9,
+        "data_readiness": 41.3,
+        "trust_governance": 60.7,
+        "financial_sustainability": 60.2,
+        "user_adoption": 55.3
+      },
+      "expected_gates": [
+        {
+          "gate_id": "G1",
+          "status": "pass",
+          "reason": "Commercial authority remains bounded."
+        },
+        {
+          "gate_id": "G2",
+          "status": "pass",
+          "reason": "The approved model and data route remains intact."
+        },
+        {
+          "gate_id": "G3",
+          "status": "pass",
+          "reason": "Segmented evaluation and acceptance remain intact."
+        },
+        {
+          "gate_id": "G4",
+          "status": "pass",
+          "reason": "Failed cohorts remain contained."
+        },
+        {
+          "gate_id": "G5",
+          "status": "pass",
+          "reason": "Authorized ownership remains intact."
+        },
+        {
+          "gate_id": "G6",
+          "status": "fail",
+          "reason": "A contradicted material benefit claim is knowingly retained."
+        },
+        {
+          "gate_id": "G7",
+          "status": "pass",
+          "reason": "The released workflow remains non-binding with tested controls."
+        }
+      ]
+    }
+  ]
+}

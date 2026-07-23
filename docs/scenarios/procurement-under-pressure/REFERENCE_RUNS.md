@@ -39,6 +39,55 @@ Example: `RR-A-D08-01` is the first evidence object at D08 in Run A.
 
 All three runs receive the same starting information, ten investigation credits, crisis sequence, and decision timing. Differences arise only from participant choices and the evidence those choices make available.
 
+## 2.1 Frozen investigation schedules
+
+These records are part of the fixtures. `Use` means the first decision where the evidence is reconciled into a supported fact. Arrival is calculated from the catalogue lead time. Free evidence `EV-POLICY-01` and `EV-SOURCE-01` is available in week 0 for all runs.
+
+### Run A schedule
+
+| Evidence | Request week | Arrival week | Cost | Linked decision | Latest useful decision | First use |
+|---|---:|---:|---:|---|---|---|
+| EV-WORKFLOW-01 | 1 | 2 | 1 | D04 | D04 | D04 |
+| EV-FINANCE-01 | 1 | 3 | 1 | D15 | D15 | D15 |
+| EV-API-01 | 1 | 2 | 1 | D09 | D09 | D09 |
+| EV-FORMAT-01 | 1 | 3 | 1 | D08 | D08 | D08 |
+| EV-SEGMENT-01 | 2 | 4 | 1 | D06/D08 | D08 | D08 |
+| EV-LABEL-01 | 2 | 4 | 1 | D05/D08 | D08 | D08 |
+| EV-USER-01 | 2 | 3 | 1 | D11 | D11 | D11 |
+| EV-MODEL-01 | 3 | 5 | 1 | D07/D14 | D14 | D14 |
+| EV-THREAT-01 | 3 | 5 | 1 | D14 | D14 | D14 |
+| EV-VOLUME-01 | 3 | 4 | 1 | D12 | D12 | D12 |
+
+Credits used: **10**. The fixture does not claim EV-SEGMENT-01 or EV-LABEL-01 at D06; those results first support the evaluation and later scope decisions.
+
+### Run B schedule
+
+| Evidence | Request week | Arrival week | Cost | Linked decision | Latest useful decision | First use |
+|---|---:|---:|---:|---|---|---|
+| EV-WORKFLOW-01 | 1 | 2 | 1 | D04 | D04 | D04 |
+| EV-SEGMENT-01 | 1 | 3 | 1 | D06/D08 | D08 | D06 |
+| EV-LABEL-01 | 1 | 3 | 1 | D05/D08 | D08 | D06 |
+| EV-USER-01 | 1 | 2 | 1 | D11 | D11 | D11 |
+| EV-API-01 | 2 | 3 | 1 | D09 | D09 | D09 |
+| EV-FORMAT-01 | 2 | 4 | 1 | D08 | D08 | D08 |
+| EV-EVALDESIGN-01 | 2 | 4 | 1 | D08 | D08 | D08 |
+| EV-FINANCE-01 | 3 | 5 | 1 | D15 | D15 | D15 |
+| EV-MODEL-01 | 3 | 5 | 1 | D07/D14 | D14 | D14 |
+| EV-VOLUME-01 | 3 | 4 | 1 | D12 | D12 | D12 |
+
+Credits used: **10**. Recommendation remains conditional at D04. The segment and label results arrive before D06 and are the evidence for pausing that component.
+
+### Run C schedule
+
+| Evidence | Request week | Arrival week | Cost | Linked decision | Latest useful decision | First use |
+|---|---:|---:|---:|---|---|---|
+| EV-MODEL-01 | 1 | 3 | 1 | D07 | D07/D14 | D07, selectively |
+| EV-THREAT-01 | 1 | 3 | 1 | D14 | D14 | not reconciled |
+| EV-VOLUME-01 | 1 | 2 | 1 | D12 | D12 | not reconciled |
+| EV-EVALDESIGN-01 | 1 | 3 | 1 | D08 | D08 | selectively |
+
+Credits used: **4**. Six expire unused. Availability does not imply verification; this fixture ignores or selectively represents inconvenient evidence. That behavior is retained in the audit record and assessed through later claims and gates, not through a penalty for unused credits.
+
 ## 3. Run A. Strong controlled pilot
 
 ### 3.1 Intended pattern
@@ -113,7 +162,7 @@ Expected outcome: **reduced-scope release** of extraction, normalization, eviden
 |---|---|---|
 | D01 | Frames week 16 as a controlled release-or-pause decision for a bounded buyer cohort, not a promise of recommendation automation. `RR-B-D01-01` | CPO accepts staged mandate; the evidence gate determines which capabilities may enter use. |
 | D02 | Converts benefits to hypotheses with Finance baseline and attributes value separately to document preparation, exception reduction, recommendation quality, adoption, and operating cost. `RR-B-D02-01` | Finance owns attribution. Recommendation receives no benefit credit unless used and demonstrably decision-useful. |
-| D03 | Prioritizes workflow study, supplier-segment coverage, historical-label review, and user observation. Later spends credits on API lead time, format samples, evaluation design, threat/privacy, model bake-off, and volume sensitivity. `RR-B-D03-01` | Evidence owners deliver before D04-D08 commitments. |
+| D03 | Prioritizes workflow study, supplier-segment coverage, historical-label review, and user observation. Later spends credits on API lead time, format samples, evaluation design, Finance baseline review, model bake-off, and volume sensitivity. `RR-B-D03-01` | Evidence owners deliver before their linked commitments and challenge responses. |
 | D04 | Initially scopes two commodities with extraction, normalization, checks, and evidence-linked recommendation drafting, but marks recommendation as conditional on data and label fitness. `RR-B-D04-01` | Data and procurement quality owners must confirm the learning target and coverage before recommendation can enter live use. |
 | D05 | Uses a hybrid architecture but makes recommendation a separable component. Document extraction, calculations, retrieval, and rules can release independently. `RR-B-D05-01` | AI architect owns separation. Failure or pause of recommendation must not disable document-processing value. |
 | D06 | Selects minimum authoritative sources, discovers 35% missing supplier history and biased strategic-supplier coverage, and rejects historical awards as the “best supplier” label. Defines lineage and missingness flags. `RR-B-D06-01` | Data owner owns remediation; procurement policy owner must define a defensible decision target. |

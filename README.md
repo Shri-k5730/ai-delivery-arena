@@ -6,7 +6,7 @@ AI Delivery Arena places a person in charge of a realistic enterprise AI initiat
 
 The Arena does not test whether someone can define RAG, drift, agents, or model evaluation. It tests whether they can apply that knowledge while business value, data quality, governance, cost, delivery pressure, and adoption compete for attention.
 
-> **Current status:** Product charter and experience definition. There is no runnable benchmark yet, and the project will not claim benchmark validity until its scoring is externally calibrated.
+> **Current status:** The charter, paper scenario, scoring contract, bounded state model, and schema-validated reference fixtures are complete. There is no runnable Arena application or calibrated benchmark yet.
 
 ## Product charter
 
@@ -186,7 +186,9 @@ Critical gates are pass or fail controls. They cap or invalidate the overall res
 - presents unsupported value, accuracy, or readiness claims as established fact
 - ignores a known severe failure affecting a critical user, supplier, or process segment
 
-The precise gate rules will be versioned with the scenario and tested for unintended loopholes.
+The precise gate rules are versioned with the scenario. PT-09 adversarially tests
+whether one concealed material breach fails the relevant gate without contaminating
+the other six.
 
 ### Evaluator split
 
@@ -553,12 +555,13 @@ The Stitch wireframes are acceptable only if:
 
 Before frontend development begins:
 
-1. Write the full 20-decision scenario and six crisis paths on paper.
-2. Run a tabletop simulation with at least three AI delivery practitioners.
-3. Remove decisions that have an obvious answer or no downstream consequence.
-4. Test the rubric independently against the same participant responses.
-5. Generate the eight Stitch wireframes and conduct task-based usability review.
-6. Freeze scenario version `procurement-under-pressure@0.1.0` for the implementation pilot.
+1. **Complete:** Author the 20-decision scenario, seven gates, and six crisis paths.
+2. **Complete:** Replay three authored reference routes and PT-09 through schema-validated deterministic fixtures.
+3. **Pending:** Run the scenario with at least three independent AI delivery practitioners.
+4. **Pending:** Blind-score the same responses with two reviewers and reconcile material disagreements.
+5. **Complete:** Add PT-09, a polished program containing one concealed material breach.
+6. **Pending:** Generate the eight Stitch wireframes and conduct task-based usability review.
+7. **Pending:** Freeze `procurement-under-pressure@0.1.0-rc1` for the implementation pilot.
 
 ## Roadmap
 
@@ -572,9 +575,22 @@ Before frontend development begins:
 | **5. Evidence** | Debrief, audit trail, portfolio pack, and replay comparison |
 | **6. Calibration** | External pilot, reliability analysis, methodology publication, and v0.1 release |
 
+## Engine status
+
+The deterministic engine core is now implemented under `src/ai_delivery_arena/`. It
+loads the versioned fixtures, executes evidence timing, arbitrates transitions,
+injects crises, applies bounded state effects, adjudicates seven critical gates, and
+produces a hash-chained run ledger. All three authored reference routes and PT-09
+replay exactly.
+
+See [`docs/ENGINE.md`](docs/ENGINE.md) for the execution contract, validation commands, first-attempt visibility boundary, and remaining implementation gaps.
+
 ## Contribution status
 
-The project is not yet accepting scenario or code contributions. Premature implementation would lock weak assumptions into software. Contributions will open after the first scenario, scoring rubric, and calibration protocol have been reviewed.
+The project is not yet accepting scenario or code contributions. The deterministic
+core, structured gate registry, and subtle unsafe fixture are implemented, but
+independent review and benchmark calibration still need to be completed before
+broader contribution would be responsible.
 
 ## Methodology influences
 

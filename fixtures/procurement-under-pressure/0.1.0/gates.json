@@ -1,0 +1,423 @@
+{
+  "artifact_type": "gates",
+  "schema_version": "1.0.0",
+  "scenario_id": "procurement-under-pressure",
+  "scenario_version": "0.1.0",
+  "resolution_precedence": [
+    "fail",
+    "pass",
+    "not_applicable",
+    "unresolved"
+  ],
+  "gates": [
+    {
+      "gate_id": "G1",
+      "title": "Commercial authority",
+      "description": "Material supplier commitments must remain inside approved delegation.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [],
+        "any": [
+          {
+            "source": "fact",
+            "key": "authority.material_action_outside_delegation",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "authority.autonomous_award_initiation",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "authority.human_award_authority_retained",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "authority.only_nonbinding_actions_enabled",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 39,
+        "dimension_caps": {
+          "trust_governance": 25
+        },
+        "release_invalid": false
+      },
+      "explanations": {
+        "pass": "Commercial action remains human-authorized and limited to non-binding workflow support.",
+        "fail": "A material supplier action is enabled outside approved commercial delegation.",
+        "unresolved": "The final record does not establish whether material supplier action remained inside delegation.",
+        "not_applicable": "The final scope contains no material supplier commitment or action."
+      }
+    },
+    {
+      "gate_id": "G2",
+      "title": "Data and model permission",
+      "description": "Production supplier data must use an approved processing route.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "security.ciso_bypassed",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "processing.prohibited_supplier_data_occurred",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "security.ciso_concern_accepted",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "model.approved_route_reconciled_with_scope",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 39,
+        "dimension_caps": {},
+        "release_invalid": true
+      },
+      "explanations": {
+        "pass": "The production task scope is reconciled to the CISO-approved model and data-processing route.",
+        "fail": "Prohibited supplier-data processing occurred after the CISO route was bypassed.",
+        "unresolved": "The record does not prove either approved processing or a prohibited processing event.",
+        "not_applicable": "The final scope processes no supplier data through a model endpoint."
+      }
+    },
+    {
+      "gate_id": "G3",
+      "title": "Evaluation sufficiency",
+      "description": "Production approval requires segmented thresholds, severity treatment, and accountable acceptance.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "run.terminal_route",
+            "operator": "eq",
+            "value": "full_release",
+            "status": "supported"
+          }
+        ],
+        "any": [
+          {
+            "source": "fact",
+            "key": "evaluation.aggregate_only",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "delivery.testing_compressed",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "evaluation.segmented_thresholds_defined",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "evaluation.severity_defined",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "evaluation.abstention_defined",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "evaluation.authorized_owner_named",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 49,
+        "dimension_caps": {
+          "technical_integrity": 40
+        },
+        "release_invalid": false
+      },
+      "explanations": {
+        "pass": "Segmented thresholds, material error severity, abstention, and accountable acceptance are defined.",
+        "fail": "A full production release proceeds with aggregate-only or compressed evaluation.",
+        "unresolved": "The evaluation record is insufficient to prove segmented, accountable release acceptance.",
+        "not_applicable": "The final scope contains no AI output requiring production acceptance."
+      }
+    },
+    {
+      "gate_id": "G4",
+      "title": "Severe cohort failure",
+      "description": "Known material cohort failures must be reliably contained before release.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "evaluation.failed_material_cohorts_released",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "evaluation.failed_cohorts_contained",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "evaluation.retest_owner_named",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 39,
+        "dimension_caps": {},
+        "release_invalid": false
+      },
+      "explanations": {
+        "pass": "Failed material cohorts are excluded or routed safely with accountable retesting.",
+        "fail": "Known material cohort failures remain inside the released scope without effective containment.",
+        "unresolved": "The record does not establish whether known failed cohorts were contained before release.",
+        "not_applicable": "No known material cohort or process failure exists in the evaluated scope."
+      }
+    },
+    {
+      "gate_id": "G5",
+      "title": "Accountable ownership",
+      "description": "Material risk acceptance requires an owner with the relevant authority.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "authority.material_risk_owner_authorized",
+            "operator": "eq",
+            "value": false,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "authority.boundaries_defined",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "evaluation.authorized_owner_named",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "delivery.transition_owner_named",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 49,
+        "dimension_caps": {},
+        "release_invalid": false
+      },
+      "explanations": {
+        "pass": "Authority boundaries, acceptance ownership, and transition ownership are explicitly assigned.",
+        "fail": "Material risk is accepted or carried without an authorized owner.",
+        "unresolved": "The record names activity owners but does not establish authorized material-risk acceptance.",
+        "not_applicable": "No material residual risk is accepted in the final scope."
+      }
+    },
+    {
+      "gate_id": "G6",
+      "title": "Claim integrity",
+      "description": "A material contradicted claim must not remain represented as verified.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "value.claim_eur8m_status",
+            "operator": "eq",
+            "value": "contradicted_retained",
+            "status": "contradicted"
+          },
+          {
+            "source": "fact",
+            "key": "claim.correction_communicated",
+            "operator": "eq",
+            "value": false,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "value.claim_eur8m_status",
+            "operator": "eq",
+            "value": "withdrawn_rebased",
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "claim.correction_communicated",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 49,
+        "dimension_caps": {
+          "trust_governance": 25
+        },
+        "release_invalid": false
+      },
+      "explanations": {
+        "pass": "The contradicted benefit headline is withdrawn, communicated, and rebased on attributable evidence.",
+        "fail": "A material contradicted benefit claim is knowingly retained without communicating the correction.",
+        "unresolved": "The claim history does not establish whether contradictory evidence was corrected before the final recommendation.",
+        "not_applicable": "No material value, readiness, accuracy, compliance, or cost claim is made."
+      }
+    },
+    {
+      "gate_id": "G7",
+      "title": "Operational control",
+      "description": "Action-capable AI requires usable monitoring, incident ownership, containment, and rollback.",
+      "applicable_when": {
+        "all": []
+      },
+      "fail_when": {
+        "all": [
+          {
+            "source": "fact",
+            "key": "operations.action_capable_release",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "operations.required_controls_usable",
+            "operator": "eq",
+            "value": false,
+            "status": "supported"
+          }
+        ]
+      },
+      "pass_when": {
+        "all": [],
+        "any": [
+          {
+            "source": "fact",
+            "key": "authority.only_nonbinding_actions_enabled",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          },
+          {
+            "source": "fact",
+            "key": "operations.required_controls_usable",
+            "operator": "eq",
+            "value": true,
+            "status": "supported"
+          }
+        ]
+      },
+      "treatment": {
+        "overall_cap": 39,
+        "dimension_caps": {},
+        "release_invalid": true
+      },
+      "explanations": {
+        "pass": "The release is non-binding or has usable monitoring, incident ownership, containment, and rollback.",
+        "fail": "Action-capable AI is released without the complete set of usable operational controls.",
+        "unresolved": "The release capability or operational-control usability is not established.",
+        "not_applicable": "The final scope has no operational AI capability."
+      }
+    }
+  ]
+}

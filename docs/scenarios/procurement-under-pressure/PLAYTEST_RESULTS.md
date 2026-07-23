@@ -2,12 +2,12 @@
 
 **Scenario ID:** `procurement-under-pressure@0.1.0`  
 **Artifact:** Deterministic transition and gate playtest  
-**Status:** Completed design test. Failed implementation-readiness gate.  
+**Status:** Bounded-health rerun complete. Saturation blocker closed; external calibration and fixture hardening remain.
 **Inputs:** `FOUNDATION.md`, `DECISIONS.md`, `SCORING.md`, `REFERENCE_RUNS.md`, `STATE_TRANSITIONS.md`
 
 ## 1. Executive verdict
 
-The scenario discriminates the three intended leadership patterns, but the state contract is **not yet deterministic enough to implement**.
+The scenario discriminates the three intended leadership patterns, the corrected state contract reproduces deterministically, and the bounded proportional health mechanic removes terminal saturation. The paper contract is ready to become structured machine fixtures.
 
 The paper run reached the intended terminal outcomes:
 
@@ -17,14 +17,14 @@ The paper run reached the intended terminal outcomes:
 | Run B | reduced-scope release; recommendation paused | Yes | seven passes |
 | Run C | full release, invalid and unsafe | Yes | seven fail candidates |
 
-However, exact numeric health traces could not be reproduced without inventing arbitration rules. Four defects are blocking:
+The first execution could not reproduce exact numeric health traces without inventing arbitration rules. It exposed four defects:
 
 1. investigation requests are summarized, not scheduled as executable records;
 2. more than one transition row can match a decision, but precedence and combination are undefined;
 3. the two-positive-effect limit conflicts with transition rows containing three positive effects;
 4. crisis preparedness labels do not have complete deterministic predicates.
 
-This is a useful failure. Implementing the current contract would bury scenario policy inside application code and produce different results across developers.
+Sections 3-12 preserve that failed first execution. Section 13 records the deterministic corrections and additive saturation failure. Section 14 contains the current bounded-health result and readiness verdict. The history is retained deliberately so later tuning cannot erase why the mechanic changed.
 
 ## 2. Method
 
@@ -270,7 +270,7 @@ The next version should not add more content. It should make the existing conten
 2. Replace the narrative transition table with rule records containing IDs and stack policies.
 3. Define crisis-preparedness predicates.
 4. Add authority, processing-event, and operational-control schemas.
-5. Re-run the three traces and publish exact health snapshots only if independently reproducible. 
+5. Re-run the three traces and publish exact health snapshots only if independently reproducible.
 6. Then run blind criterion scoring with two reviewers and create `REFERENCE_SCORES.md`.
 
 Application development remains blocked until PT-01 through PT-04 are closed. The scenario does not need a UI yet. It needs deterministic semantics.
@@ -280,3 +280,196 @@ Application development remains blocked until PT-01 through PT-04 are closed. Th
 Keep the scenario identifier at `procurement-under-pressure@0.1.0` while correcting paper-design defects. These are pre-implementation clarifications, not a released behavior change.
 
 After the corrected traces reproduce exactly, freeze the scenario fixtures and tag the first executable contract as `0.1.0-rc1`.
+
+## 13. Corrected rerun. 22 July 2026
+
+This section supersedes the blocker status in sections 1, 8, 9, 10, and 11 while preserving the original failure record. The source contracts were patched rather than silently changing the test interpretation.
+
+### 13.1 Corrections applied
+
+| Original blocker | Correction | Result |
+|---|---|---|
+| PT-01 evidence timing | Added frozen request, arrival, cost, linked-decision, latest-useful, and first-use records for Runs A-C in `REFERENCE_RUNS.md` | Closed |
+| PT-02 overlapping transitions | Added rule identity, priority, stacking groups, atomic effects, and deterministic arbitration | Closed at paper-contract level |
+| PT-03 effect cap contradiction | Removed the two-effect cap; authored vectors now apply atomically within explicit stacking groups | Closed |
+| PT-04 crisis preparedness | Added complete supported-fact predicates and exact prepared/partial/unprepared resolution for C01-C06 | Closed |
+| PT-05 processing intent vs event | Added separate planned, authorized, and occurred processing facts | Closed at schema level |
+| PT-06 authority inference | Added a versioned role-to-risk authority map | Closed at schema level |
+| PT-07 control usability | Added required owner, trigger, mechanism, scope, test, result, and fallback fields | Closed at schema level |
+| PT-08 investigation bonus | Removed direct health points for requesting or using evidence | Closed |
+| PT-10 duplicate G6 facts | D20 now consolidates gate facts by gate and claim subject | Closed at contract level |
+| PT-11 C05 contradiction | Fixed observation remains 30%; preparedness changes recovery shock only | Closed |
+
+PT-09 and PT-12 remain future fixture-quality work. They do not prevent deterministic paper execution, but they do prevent benchmark calibration and frozen machine fixtures.
+
+### 13.2 Re-execution policy
+
+The rerun used these additional fixed interpretations:
+
+- availability is calculated exclusively from the frozen schedules;
+- a positive evidence-dependent fact requires `Available` evidence and coherent reconciliation in the decision record;
+- Run A's D06 combines `source_scope` and `ingestion_route` effects;
+- Run A's D07 combines approved `production_route` and sanitized `comparison_route` effects;
+- Run B's D04 applies the more specific reduced-scope rule within `release_scope`;
+- crisis preparedness is evaluated before the linked response and cannot be repaired retroactively;
+- Run A and B have a tested cost alert before C06, as supported by their D12 owner, threshold, cadence, and response records;
+- Run C's D14 records prohibited processing as having occurred, converting the earlier G2 exposure into a fail fact;
+- D20 produces gate facts but no terminal health reward or penalty.
+
+### 13.3 Exact terminal health snapshots
+
+Starting state for every fixture was `45 / 40 / 50 / 35 / 35 / 50 / 40` in canonical dimension order.
+
+| Fixture | Business | Delivery | Technical | Data | Trust | Financial | Adoption | Gate result |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Run A | 55 | 100 | 100 | 40 | 100 | 100 | 65 | seven passes |
+| Run B | 50 | 100 | 100 | 45 | 100 | 100 | 70 | seven passes |
+| Run C | 0 | 0 | 0 | 0 | 0 | 0 | 0 | seven fails |
+
+These totals are now reproducible from the corrected paper contract. They are also unacceptable as a calibrated simulation.
+
+### 13.4 New finding: health saturation
+
+The corrected engine resolves ambiguity but reveals that repeated directional deltas and per-step clamping destroy information:
+
+- Runs A and B saturate delivery, technical integrity, trust, and financial sustainability at 100.
+- Run C saturates every dimension at 0.
+- Different strong decisions become indistinguishable after a dimension reaches its bound.
+- Later crises cannot express meaningful degradation in a saturated dimension.
+- The all-zero unsafe run looks like a caricature, confirming PT-09.
+- These hidden values would not support useful consequence tuning even though they are not shown to first-attempt users.
+
+Therefore, **numeric program health remains blocked from implementation**. Deterministic semantics now pass, but calibration does not.
+
+### 13.5 Revised implementation-readiness verdict
+
+| Layer | Verdict |
+|---|---|
+| Scenario route discrimination | Pass |
+| Evidence timing | Pass |
+| Transition arbitration | Pass at paper-contract level |
+| Crisis preparedness | Pass |
+| Gate-fact generation | Pass with later expert adjudication as designed |
+| Exact arithmetic reproducibility | Pass |
+| Numeric health calibration | **Fail. Saturation blocker** |
+| Structured machine fixtures | Not yet created |
+| Independent reviewer agreement | Not yet tested |
+
+Do not tag `0.1.0-rc1` yet. The next design task is to replace additive cumulative health with a bounded state model that preserves headroom and makes shocks observable. Candidate mechanics must be tested against the same three traces before one is selected. Competency scoring remains separate and unchanged.
+
+## 14. Bounded-health correction and third rerun
+
+This section supersedes only the additive arithmetic and saturation verdict in sections 13.3-13.5. It preserves the transition matches, evidence schedules, crises, signals, gate facts, and the original failed result as an audit record.
+
+### 14.1 Candidate decision
+
+Three mechanics were considered:
+
+| Candidate | Result |
+|---|---|
+| Smaller additive effects plus clamping | Rejected. It delays saturation but does not remove it, and tuning becomes scenario-length dependent. |
+| Fixed ordinal health bands | Rejected for v0.1. It is easy to explain but loses too much crisis and recovery resolution. |
+| Bounded proportional update | Selected. It preserves authored directions and severity while mathematically retaining headroom and resilience. |
+
+The selected update is:
+
+```text
+positive e: h_next = h + e * (100 - h) / 100
+negative e: h_next = h + e * h / 100
+```
+
+The rerun used the same canonical event order and exact matched effects as section 13. No rule was added, removed, or reclassified to improve the result.
+
+### 14.2 Exact terminal snapshots
+
+Starting state remained `45 / 40 / 50 / 35 / 35 / 50 / 40` in canonical dimension order. Values below are rounded to one decimal only after the full trace.
+
+| Fixture | Business | Delivery | Technical | Data | Trust | Financial | Adoption | Gate result |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| Run A | 48.6 | 72.4 | 67.9 | 41.3 | 79.7 | 68.3 | 55.3 | seven passes |
+| Run B | 47.0 | 69.9 | 66.9 | 43.0 | 78.7 | 68.3 | 56.6 | seven passes |
+| Run C | 24.0 | 12.4 | 17.0 | 24.1 | 3.1 | 22.3 | 20.7 | seven fails |
+
+These are hidden **program-state** values, not participant competency scores. A value near 50 is not a grade of 50%. It represents a program with material unresolved exposure and remaining capacity to improve or deteriorate.
+
+### 14.3 Acceptance test
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| No terminal `0` or `100` | Pass | All 21 terminal values retain headroom or resilience. |
+| Strong routes remain distinguishable | Pass | A leads on delivery, technical, and trust; B leads on data and adoption. |
+| Less AI is not structurally penalized | Pass | B remains close to A and has the same seven-gate pass pattern. |
+| Unsafe route fails decisively | Pass | C is materially lower in every dimension and fails all seven gates. |
+| Unsafe route is not seven identical values | Pass | C ranges from `3.1` trust to `24.1` data. |
+| Crises remain visible after prior support | Pass at arithmetic level | No dimension is saturated before C01-C06; each applicable shock changes state. |
+| Gates remain non-compensable | Pass | The health mechanic does not change gate facts or caps. |
+
+### 14.4 Interpretation and remaining risks
+
+The saturation blocker is closed. The bounded values are suitable for implementing a deterministic state engine, but they are not validated measurements of real program health.
+
+Two risks remain:
+
+1. Run C is still a deliberately dense failure fixture. PT-09 remains open because it does not test whether the gates catch a polished program with only one concealed material breach.
+2. Terminal snapshots alone do not prove that every intermediate signal feels proportionate to a human participant. Sensitivity testing must compare full trajectories, not only endpoints.
+
+### 14.5 Revised readiness verdict
+
+| Layer | Verdict |
+|---|---|
+| Scenario route discrimination | Pass |
+| Evidence timing and transition arbitration | Pass at paper-contract level |
+| Crisis preparedness and gate-fact generation | Pass at paper-contract level |
+| Exact bounded arithmetic | Pass |
+| Numeric saturation | **Closed** |
+| Structured machine fixtures | Created and replay-validated; see section 15 |
+| Subtle unsafe fixture, PT-09 | Open before benchmark calibration |
+| Independent reviewer agreement | Not yet tested |
+
+The next implementation artifact may now be structured, schema-validated scenario and reference-run fixtures. Do not call the methodology calibrated or tag `0.1.0-rc1` until PT-09 and independent reviewer testing are complete.
+
+## 15. Structured fixture validation
+
+The paper contract was converted into versioned JSON fixtures and validated on 22 July 2026.
+
+### 15.1 Executable artifacts
+
+| Artifact | Path | Count |
+|---|---|---:|
+| Shared JSON Schema | `schemas/scenario-fixtures.schema.json` | 5 artifact variants |
+| Scenario state | `fixtures/procurement-under-pressure/0.1.0/scenario.json` | 20 decisions, 7 health dimensions |
+| Evidence catalogue | `fixtures/procurement-under-pressure/0.1.0/evidence.json` | 15 items |
+| Transition registry | `fixtures/procurement-under-pressure/0.1.0/transitions.json` | 49 rules |
+| Crisis registry | `fixtures/procurement-under-pressure/0.1.0/crises.json` | 6 crises |
+| Reference fixtures | `fixtures/procurement-under-pressure/0.1.0/reference-runs.json` | 3 runs, 60 decision records |
+| Cross-file validator | `scripts/validate_fixtures.py` | deterministic replay and contract checks |
+
+### 15.2 Defects exposed and corrected
+
+The structured conversion exposed two residual paper-contract defects:
+
+1. Run B was declared prepared for C02, and its terminal trust value included the preparedness effect, but its frozen schedule did not request `EV-FINANCE-01`. The fixture now replaces the non-essential Run B threat-assessment request with the Finance baseline request. The ten-credit limit is unchanged.
+2. Transition arbitration said different stacking groups applied alphabetically, while the published Run A terminal data value used authored rule order at D06. The contract now performs within-group priority arbitration first and then applies surviving rules by ascending rule ID. Stacking groups prevent duplication but do not reorder the authored event sequence.
+
+Both changes close reproducibility defects. They do not change a hidden truth, transition direction, crisis observation, gate condition, or intended route.
+
+### 15.3 Validation result
+
+The standard-library validator confirmed:
+
+- all five JSON artifacts conform to the shared structural contract;
+- all cross-file IDs, evidence references, and decision links resolve;
+- evidence costs, arrival weeks, first-use dates, and ten-credit limits hold;
+- selected transition rules equal the executable predicate and arbitration result;
+- all six preparedness declarations match the facts available immediately before each crisis; and
+- the bounded replay reproduces all 21 published terminal values exactly to one decimal place.
+
+The five fixture JSON files also pass the Draft 2020-12 JSON Schema through Ajv.
+
+| Fixture | Replayed terminal state | Gate expectation |
+|---|---|---|
+| RR-A | `48.6 / 72.4 / 67.9 / 41.3 / 79.7 / 68.3 / 55.3` | seven passes |
+| RR-B | `47.0 / 69.9 / 66.9 / 43.0 / 78.7 / 68.3 / 56.6` | seven passes |
+| RR-C | `24.0 / 12.4 / 17.0 / 24.1 / 3.1 / 22.3 / 20.7` | seven fails |
+
+Structured-fixture implementation readiness is **passed**. Benchmark calibration is still blocked by PT-09 and independent-reviewer agreement. The fixture expected gates remain calibration hypotheses; the deterministic validator does not adjudicate them.

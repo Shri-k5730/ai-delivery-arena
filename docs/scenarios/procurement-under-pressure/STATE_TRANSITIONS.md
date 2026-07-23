@@ -2,7 +2,7 @@
 
 **Scenario ID:** `procurement-under-pressure@0.1.0`  
 **Artifact:** Deterministic state, evidence, crisis, and gate contract  
-**Status:** Paper design. Not calibrated. Not an implementation specification until playtested.  
+**Status:** Deterministic paper contract playtested. Bounded health mechanic selected; external calibration pending.
 **Depends on:** `FOUNDATION.md`, `DECISIONS.md`, `SCORING.md`, `REFERENCE_RUNS.md`
 
 ## 1. Purpose
@@ -61,7 +61,7 @@ decision_ledger: []             # raw response, extraction, effects, timestamp
 audit_log: []
 ```
 
-Health values are clamped to `0..100`. Each transition stores the before value, delta, after value, rule ID, and supporting fact IDs.
+Health values remain on `0..100`, but authored effects are **not added directly**. Each transition stores the before value, authored effect, realized change, after value, rule ID, and supporting fact IDs.
 
 ## 4. Fact contract
 
@@ -166,7 +166,7 @@ Evidence content is immutable for the scenario version. Presentation order may v
 
 Submitting a decision advances to its defined week, resolves due evidence and events, applies transitions, and emits signals. A participant cannot edit a submitted decision. A later decision can explicitly supersede a fact while preserving history.
 
-## 7. Health-effect grammar
+## 7. Bounded health-effect grammar
 
 Use named effect sizes so tuning remains visible:
 
@@ -179,7 +179,74 @@ effect_sizes:
 
 Calibration may tune a rule within the ranges in `FOUNDATION.md`, but may not change its direction without a scenario-version change.
 
-A single response normally produces no more than two positive and two negative health effects. This prevents verbose answers from accumulating artificial advantage. Duplicate facts do not stack. Crisis effects can exceed this limit because they represent operating consequences.
+### 7.0 Bounded proportional update
+
+An authored effect expresses pressure or support, not literal points. Convert it into a realized change using the current value `h`:
+
+```text
+positive effect e: h_next = h + e * (100 - h) / 100
+negative effect e: h_next = h + e * h / 100
+```
+
+Round only for display. Store at least four decimal places and carry the unrounded value into the next transition.
+
+This mechanic is selected for v0.1 because it has five required properties:
+
+1. values remain within `0..100` without per-step clamping;
+2. repeated support has diminishing returns and cannot create an easy `100`;
+3. repeated harm reduces remaining resilience instead of producing an immediate floor;
+4. a late shock remains observable even after many earlier positive decisions; and
+5. the authored direction, relative severity, rule order, and gate logic remain unchanged.
+
+Example: from health `40`, a `+15` effect realizes `+9` and ends at `49`. A later `-15` realizes `-7.35` and ends at `41.65`. Recovery does not erase the shock or the audit history.
+
+The update is intentionally path-dependent. Therefore, effects must be applied in canonical event order: decision rules, then due crisis preparedness effects, then the linked response. Rules within the same event retain the stable order in section 7.1.
+
+Effects are controlled by **rule and stacking group**, not by response length. Every matched rule belongs to a stacking group. Within one decision, only the highest-priority matched rule in each group applies. Rules from different groups may combine. A rule's complete authored effect vector applies atomically; it is never truncated to an arbitrary number of dimensions. Duplicate facts and repeated language do not stack. Crisis effects use separate groups and may combine with the response transition.
+
+### 7.1 Rule identity, priority, and arbitration
+
+Transition rows are identified as `TR-Dnn-nn` in their displayed order within each decision. Their default metadata is:
+
+```yaml
+rule_id: TR-D06-03
+decision: D06
+priority: 300
+stacking_group: ingestion_route
+match: all_required_supported_facts
+effects_atomic: true
+```
+
+The executable rule registry must materialize those fields. This paper table uses the following deterministic policy:
+
+1. Evaluate only rules for the current decision.
+2. A rule matches only when every stated condition is supported. `Asserted` facts cannot trigger a positive rule requiring evidence or an operating control.
+3. Apply the highest-priority match within each stacking group. A higher priority represents a more specific or more severe condition.
+4. After within-group arbitration, apply the surviving rules in ascending rule ID. Stacking groups decide which rules survive; they do not reorder the authored event sequence. The bounded update is path-dependent, so this ordering is part of the scenario contract.
+5. Negative breach/failure rules have priority `500`; contradiction rules `400`; controlled exception rules `300`; supported baseline rules `200`; weak-pattern rules `100`.
+6. D20 reconciliation never grants a health bonus. Every applicable unresolved-condition rule is consolidated by affected gate and subject, then applied once.
+
+Decision-specific stacking groups are:
+
+| Decision | Groups that may combine |
+|---|---|
+| D04 | `release_scope` |
+| D05 | `architecture_pattern`, `target_validity` |
+| D06 | `source_scope`, `ingestion_route`, `data_claim_integrity` |
+| D07 | `production_route`, `comparison_route`, `processing_breach` |
+| D09 | `delivery_sequence`, `target_ingestion_state` |
+| D11 | `workflow_fit`, `authority_breach` |
+| D12 | `economics_design`, `forecast_integrity` |
+| D14 | `security_response` |
+| D16 | `dependency_replan` |
+| D17-D19 | `crisis_response`, plus applicable `claim_integrity` |
+| D20 | `terminal_reconciliation`, `unresolved_gate_condition` |
+
+All other decisions use one group named after the decision. This closes overlap without creating a hidden best option. For example, D06 may legitimately receive both the minimum-source effect and the controlled-temporary-ingestion trade-off because they describe different properties. D07 may combine an approved production route with a sanitized comparison route, but a proven processing breach supersedes all positive `production_route` effects.
+
+### 7.2 Investigation effects
+
+Requesting or reading evidence has **no direct health effect**. The earlier generic D03 `relevant dimension +5` interpretation is withdrawn. Evidence changes which later facts can become supported, whether a crisis is prepared for, and whether ignorance was reasonably avoidable. This prevents investigation credits from becoming a hidden point-buying system.
 
 ## 8. Decision transition table
 
@@ -192,7 +259,7 @@ The table defines the principal deterministic transitions. Qualitative assessmen
 | D01 | open discovery without time-box/decision date | `delivery -10`, `business -5` | “Steering group asks when discovery will produce a decision.” | none |
 | D02 | Finance-owned hypothesis, attribution and pivot condition | `business +10`, `financial +5` | “Benefit claim is marked provisional pending baseline.” | none |
 | D02 | EUR 8m/30% recorded as verified commitment without baseline | `business -5`, `trust -5` | “The headline target enters the steering baseline without an attribution method.” | `G6 exposure`, not failure yet |
-| D03 | request tied to uncertainty, decision, owner and useful date | relevant dimension `+5` when evidence arrives and is used | “Evidence request accepted; result due in week N.” | affects `reasonably_obtainable` |
+| D03 | request tied to uncertainty, decision, owner and useful date | no direct health effect | “Evidence request accepted; result due in week N.” | affects `reasonably_obtainable` |
 | D03 | duplicate or untargeted request | no positive effect; credit consumed | “Request accepted, but no decision dependency is recorded.” | none |
 | D04 | bounded cohort/capability/authority/exclusions and exit criteria | `business +10`, `delivery +10`, `trust +5` | “Pilot boundary accepted for planning.” | clears pending G1 exposure if commitments excluded |
 | D04 | broad European scope without dependency/evidence boundary | `delivery -15`, `user -5`, `trust -5` | “The proposed release depends on unresolved sources, cohorts, and controls.” | pending G1 if material action enabled |
@@ -235,7 +302,7 @@ The table defines the principal deterministic transitions. Qualitative assessmen
 | D19 | task tracing, caching, loop controls, quality preservation, reforecast | `financial +15`, `technical +5` | “Four-times cost is contained and unit economics will be revalidated.” | G3 pass evidence if quality preserved |
 | D19 | continue without economic correction or apply silent universal cap | `financial -20`, `technical -10`, `trust -5` | “Cost or quality remains uncontrolled under live usage.” | G6/G3 exposure |
 | D20 | recommendation reconciles evidence, scope, gates, acceptors and operations | effects follow selected outcome; no automatic bonus | “Final recommendation records included and excluded capabilities and conditions.” | resolves all pending gates |
-| D20 | release contains applicable failed/unresolved material conditions | `trust -20`, relevant health `-15` | “Final release claim conflicts with one or more readiness conditions.” | applicable gate fail facts |
+| D20 | release contains applicable failed/unresolved material conditions | no terminal health effect; prior consequences remain | “Final release claim conflicts with one or more readiness conditions.” | applicable gate fail facts consolidated once per gate and subject |
 
 Short aliases in this table map to canonical variables: `business`, `delivery`, `technical`, `data`, `trust`, `financial`, and `user`.
 
@@ -272,6 +339,29 @@ D13 is a scheduled executive authority challenge, not a crisis injection. The si
 
 Preparedness never eliminates the fact itself. For example, segmented evaluation does not make German and Czech performance pass; it makes the failure visible and containable.
 
+### 9.2 Deterministic preparedness predicates
+
+Predicates are evaluated immediately before the crisis fires. Every listed fact must be `supported` and effective by that week. Evidence being merely requested never counts.
+
+| Crisis | Prepared | Partial | Unprepared |
+|---|---|---|---|
+| C01 | `model.production_route_approved=true`, `architecture.fallback_defined=true`, and (`EV-MODEL-01` verified or task-level adequacy evidence recorded) | approved route or fallback exists, but not both; no prohibited processing has occurred | neither prepared condition holds, or the plan depends solely on the blocked route |
+| C02 | `value.claim_eur8m_status=hypothesis`, `value.baseline_owned=true`, and `EV-FINANCE-01` available or verified | claim is explicitly provisional but baseline/evidence is incomplete | claim is represented as verified or committed without attribution |
+| C03 | `delivery.api_review_started=true`, `delivery.temporary_path_controlled=true`, and `delivery.replan_trigger_defined=true` | any two of the three prepared facts hold | zero or one prepared fact holds |
+| C04 | `evaluation.segmented_thresholds_defined=true`, `evaluation.severity_defined=true`, `evaluation.abstention_defined=true`, and a cohort-routing owner is named | segmented thresholds exist but one or more containment facts are missing | aggregate-only evaluation or no cohort-specific release rule |
+| C05 | `workflow.embedded=true`, `workflow.adoption_threshold_defined=true`, and a buyer-observation or usability test occurred before week 14 | embedded workflow or pre-week-14 usability test exists, but the full set does not | neither workflow integration nor prior usability evidence exists |
+| C06 | `economics.unit_cost_model=true`, `operations.cost_monitoring_active=true`, and a pre-steering threshold alert event exists | unit economics and a threshold exist, but no pre-steering alert event | monthly aggregate spend only, or no usable cost monitoring |
+
+For C05 the observation remains 30% intent to use in every fixture. Preparedness changes containment time and the recovery burden, not the observed value. For C06, `operations.cost_monitoring_active` requires an owner, metric, threshold, cadence, and recorded test. A design statement alone is insufficient.
+
+### 9.3 Preparedness effect resolution
+
+- `prepared`: apply the prepared modifier shown in section 9.1.
+- `partial`: apply the base shock only.
+- `unprepared`: apply the base shock and unprepared modifier.
+- A response after the crisis cannot retroactively change preparedness.
+- The exact predicate result and supporting fact IDs are written to the audit log.
+
 ## 10. Hidden-truth activation matrix
 
 | Hidden truth | Earliest fair evidence | Consequence activation |
@@ -292,6 +382,14 @@ Preparedness never eliminates the fact itself. For example, segmented evaluation
 The “always reveals” entries guarantee fairness at the point of response. Earlier investigation earns preparedness and better options; it does not buy access to an answer key.
 
 ## 11. Gate-fact lifecycle
+
+### 11.0 Authority, processing, and control records
+
+The scenario supplies a versioned authority map. The CPO may accept commercial authority and business-scope risk; the CISO may approve model/data-processing and security residual risk; Procurement Quality may accept evaluation/cohort release; the Data Owner may accept data-quality remediation; Finance may own value claims; Operations may accept run-control readiness. A sponsor, delivery lead, AI lead, or technical architect cannot accept risks reserved for those roles.
+
+Processing is recorded as separate facts: `processing.planned`, `processing.authorized`, and `processing.occurred`, each with endpoint, data class, week, and approval reference. G2 failure requires prohibited `processing.occurred=true` or an explicit D20 authorization to operate that route. A plan alone creates exposure.
+
+An operational control is usable only when its record includes `owner`, `trigger`, `mechanism`, `affected_scope`, `last_test_week`, `test_result`, and `fallback_or_escalation`. G7 cannot pass from control names alone.
 
 Gate status is not a mutable health field. The engine records factual candidates:
 
@@ -480,15 +578,15 @@ Acceptance conditions:
 5. Run C creates the expected authority, permission, evaluation, containment, ownership, integrity, and operational-control fail candidates.
 6. The unsafe route cannot mask gate facts through high business or delivery health.
 7. At least one early weakness can be recovered, but its audit record remains.
-8. Two independent reviewers agree on fact extraction for at least 90% of material facts before rubric scoring begins. 
+8. Two independent reviewers agree on fact extraction for at least 90% of material facts before rubric scoring begins.
 
 ## 19. Open calibration issues
 
-- The provisional health deltas need sensitivity testing; they are simulation mechanics, not empirical measurements.
+- The bounded proportional mechanic passes the three-fixture saturation test, but its authored effect sizes still require sensitivity testing with human playtests. They are simulation mechanics, not empirical measurements.
 - Crisis C05 currently becomes less severe when the workflow was embedded, while the reference fixtures still state 30% intent to use. Paper testing must confirm whether this should be a distinct observation variant or only a preparedness distinction.
 - Evidence lead times may make four initial requests disproportionately valuable. Test whether stage-specific capacity is fairer than one pool of ten credits.
 - The evidence catalogue contains 13 paid requests for ten credits. Validate whether meaningful trade-offs remain without creating an obvious canonical bundle.
-- The two-effect stacking limit may underrepresent decisions such as D20; terminal reconciliation is intentionally exempt but needs review.
+- Bounded health effects now reproduce without saturation. External calibration must test whether the distance between routes and the dimension trajectories feel proportionate.
 - Semantic fact extraction is the largest implementation risk. Before using an LLM normalizer, create hand-authored expected facts for all 60 reference decision records.
 - Health signals may feel arbitrary if too many deltas occur without observable operational consequences. Remove any transition that cannot produce a comprehensible signal.
 

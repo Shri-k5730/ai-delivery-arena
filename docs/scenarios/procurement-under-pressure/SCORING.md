@@ -262,7 +262,7 @@ Primary decisions: D03, D04, D06. Hidden interaction: HT-02.
 | Anchor | Scenario-specific evidence |
 |---:|---|
 | 0 | Integrates all 12 systems by default or uses data without a defined purpose and authority. |
-| 1 | Requests data broadly or says â€œsingle source of truthâ€ without mapping fields to release decisions. |
+| 1 | Requests data broadly or says “single source of truth” without mapping fields to release decisions. |
 | 2 | Identifies a smaller source set, but authority, permitted use, or necessity remains unclear. |
 | 3 | Maps each required field and outcome to the minimum authoritative source, owner, permitted use, and release purpose. |
 | 4 | Stages access and remediation by evidence value, avoiding unnecessary integration while preserving a credible scale path. |
@@ -312,7 +312,7 @@ Primary decisions: D04, D05, D11, D13, D20. Hidden interaction: HT-10.
 | Anchor | Scenario-specific evidence |
 |---:|---|
 | 0 | Permits AI to initiate a material supplier commitment outside delegation or treats logging as authorization. |
-| 1 | States â€œhuman in the loopâ€ without defining what is verified, who decides, or what the system may do. |
+| 1 | States “human in the loop” without defining what is verified, who decides, or what the system may do. |
 | 2 | Retains nominal human approval, but evidence visibility, override, segregation, or automation-bias control is weak. |
 | 3 | Defines permitted and prohibited actions, meaningful verification, override, segregation of duties, and final accountable authority. |
 | 4 | Preserves value through bounded low-risk actions and creates an evidence-based future autonomy path without weakening current authority. |
@@ -599,7 +599,7 @@ The debrief must present information in this order:
 5. three strongest demonstrated judgments;
 6. three highest-priority development needs;
 7. consequential decision timeline, including recoveries and unresolved risks;
-8. secondary overall score and explicit â€œnot calibratedâ€ notice; and
+8. secondary overall score and explicit “not calibrated” notice; and
 9. replay invitation clearly separated from the frozen first attempt.
 
 Feedback must describe what the participant did and what stronger evidence or control would have changed the assessment. It must not claim that one listed option was the answer.
