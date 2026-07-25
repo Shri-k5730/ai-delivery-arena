@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-delivery-arena"
-version = "0.3.0"
+version = "0.2.0"
 description = "Open-source enterprise AI delivery simulation and assessment"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,7 +23,3 @@ where = ["src"]
 [tool.setuptools.package-data]
 "ai_delivery_arena.web" = ["static/*.html", "static/*.css", "static/*.js"]
 "ai_delivery_arena.hosted" = ["static/*.css"]
-"ai_delivery_arena.react_ui" = [
-  "frontend/build/*.js",
-  "frontend/build/*.css",
-]

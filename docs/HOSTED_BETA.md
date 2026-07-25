@@ -1,4 +1,4 @@
-# Hosted Beta v0.3
+# Hosted Beta v0.2
 
 AI Delivery Arena Hosted Beta uses one public Streamlit application and one
 Supabase project. The deterministic engine, scenario fixtures, scoring rules,
@@ -9,8 +9,6 @@ and local edition remain in the same repository.
 ```text
 Browser
   -> Streamlit Community Cloud
-       -> React + TypeScript product interface
-       -> Streamlit Component v2 event bridge
        -> deterministic Python engine
        -> Supabase Auth
        -> Supabase Postgres
@@ -21,14 +19,6 @@ Browser
 
 The application uses the Supabase publishable or legacy anon key. It never uses
 the service-role key.
-
-Streamlit is the Python runtime, not the visible interaction model. The browser
-receives a compiled React product interface for the marketing site, account
-access, run centre, briefing, decision cockpit, review, consequence, and
-debrief. Typed transient events cross the component boundary and the Python
-controller remains authoritative for every read and write. The React bundle
-never receives the Supabase key, signing key, canonical encrypted save, rule
-identifiers, hidden health, or gate adjudications during an active attempt.
 
 The canonical run document is encrypted with AES-GCM before it is sent to
 Supabase. Its authentication digest and deterministic ledger are verified after
@@ -98,28 +88,8 @@ unreadable. Store an offline copy in a password manager.
 8. Deploy.
 
 The repository's `requirements.txt` installs the package, Streamlit, Supabase
-client, cryptography library, and the already compiled React assets. Streamlit
-Cloud does not need Node.js. GitHub commits to `main` trigger Streamlit
+client, and the cryptography library. GitHub commits to `main` trigger Streamlit
 redeployment.
-
-## React interface development
-
-The React source and committed production assets live under
-`src/ai_delivery_arena/react_ui/frontend`.
-
-After changing the interface:
-
-```bash
-cd src/ai_delivery_arena/react_ui/frontend
-npm ci
-npm test
-npm run build
-```
-
-Commit both the source changes and the regenerated files under `build/`. The
-production bundle is mounted through Streamlit Components v2 without an iframe.
-The Python package loads exactly one generated JavaScript file and one generated
-CSS file, and fails closed if the build is missing or ambiguous.
 
 ## 4. Validate the hosted boundary
 
@@ -186,6 +156,6 @@ Streamlit storage, so hibernation or redeployment does not lose committed runs.
 
 ## Release boundary
 
-Hosted Beta v0.3 is appropriate for product learning and a controlled public
+Hosted Beta v0.2 is appropriate for product learning and a controlled public
 beta. It is not positioned as a production-grade assessment service, a hiring
 decision system, certification, or independently calibrated benchmark.

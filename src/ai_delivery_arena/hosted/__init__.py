@@ -1,5 +1,5 @@
-"""Hosted Streamlit runtime with a full React product experience."""
+"""Hosted Streamlit product experience for AI Delivery Arena."""
 
-from .react_app import main
+from .app import main
 
 __all__ = ["main"]
