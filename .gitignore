@@ -11,3 +11,4 @@ __pycache__/
 .arena-export-codec/
 .env
 .streamlit/secrets.toml
+node_modules/
