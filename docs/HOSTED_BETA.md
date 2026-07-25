@@ -35,8 +35,9 @@ Use an existing Supabase project or create a free project.
 3. Open **Authentication → Providers → Email**.
 4. Enable email/password authentication.
 5. Decide whether email confirmation is required.
-6. Under **URL Configuration**, add the final Streamlit URL as the Site URL and
-   an allowed redirect URL.
+6. Under **Authentication → URL Configuration → Redirect URLs**, add the final
+   Streamlit URL. If this Supabase project is shared with another application,
+   leave the existing Site URL unchanged.
 
 The migration creates `public.arena_runs`, enables and forces RLS, removes anon
 access, and grants authenticated users access only through owner-scoped
@@ -62,10 +63,15 @@ publishable_key = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"
 [arena]
 signing_key = "PASTE_THE_GENERATED_SECRET"
 github_url = "https://github.com/YOUR_ACCOUNT/ai-delivery-arena"
+app_url = "https://YOUR-APP.streamlit.app"
 ```
 
 Use the publishable key shown by newer Supabase projects or the legacy anon key.
 Never paste the service-role key.
+
+`app_url` is sent to Supabase as the confirmation-email destination. Supabase
+accepts it only when the same URL is present in Authentication → URL
+Configuration → Redirect URLs.
 
 Keep the signing key stable. Changing it makes existing encrypted cloud runs
 unreadable. Store an offline copy in a password manager.

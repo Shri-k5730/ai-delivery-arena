@@ -10,6 +10,4 @@ dist/
 .arena-import-codec/
 .arena-export-codec/
 .env
-.streamlit/secrets.example.toml
 .streamlit/secrets.toml
-.env.example

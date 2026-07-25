@@ -14,7 +14,8 @@ Requirements: Python 3.11 or later and a Supabase project.
 
 1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql) in the Supabase SQL editor.
 2. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`.
-3. Add the Supabase URL, publishable/anon key, and a generated Arena signing key.
+3. Add the Supabase URL, publishable/anon key, a generated Arena signing key,
+   and the Arena application URL.
 4. Install and start:
 
 ```bash

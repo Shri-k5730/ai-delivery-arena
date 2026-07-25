@@ -29,6 +29,18 @@ body,
   color: var(--arena-ink-900);
 }
 
+/*
+ * The Arena provides its own product header and account controls. Streamlit's
+ * hosting toolbar otherwise consumes the top of the decision viewport.
+ */
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+#MainMenu {
+  display: none !important;
+}
+
 [data-testid="stAppViewContainer"] {
   background:
     radial-gradient(circle at 4% 0%, rgba(33, 105, 223, 0.08), transparent 31rem),

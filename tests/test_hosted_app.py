@@ -16,6 +16,7 @@ from ai_delivery_arena.hosted.app import (  # noqa: E402
     _draft_errors,
     _escape,
     _legacy_jwt_role,
+    _signup_credentials,
 )
 
 
@@ -56,6 +57,39 @@ class HostedAppTestCase(unittest.TestCase):
         self.assertEqual(
             "&lt;script&gt;bad(&#39;x&#39;)&lt;/script&gt;",
             _escape("<script>bad('x')</script>"),
+        )
+
+    def test_signup_uses_the_arena_confirmation_destination(self) -> None:
+        self.assertEqual(
+            {
+                "email": "leader@example.com",
+                "password": "strong-password",
+                "options": {
+                    "email_redirect_to": (
+                        "https://ai-delivery-arena.streamlit.app"
+                    )
+                },
+            },
+            _signup_credentials(
+                "leader@example.com",
+                "strong-password",
+                "https://ai-delivery-arena.streamlit.app",
+            ),
+        )
+
+    def test_signup_remains_compatible_without_a_configured_destination(
+        self,
+    ) -> None:
+        self.assertEqual(
+            {
+                "email": "leader@example.com",
+                "password": "strong-password",
+            },
+            _signup_credentials(
+                "leader@example.com",
+                "strong-password",
+                "",
+            ),
         )
 
 

@@ -28,6 +28,7 @@ class HostedSettings:
     supabase_key: str
     signing_key: bytes
     github_url: str
+    app_url: str
 
     @property
     def configured(self) -> bool:
@@ -68,6 +69,10 @@ def load_settings(st: Any) -> HostedSettings:
             "https://github.com/Shri-k5730/ai-delivery-arena",
         ).strip()
     )
+    app_url = (
+        _secret_value(st, "arena", "app_url")
+        or os.getenv("ARENA_APP_URL", "").strip()
+    ).rstrip("/")
     role = _legacy_jwt_role(key)
     if role == "service_role":
         raise RuntimeError(
@@ -78,6 +83,7 @@ def load_settings(st: Any) -> HostedSettings:
         supabase_key=key,
         signing_key=signing.encode("utf-8"),
         github_url=github,
+        app_url=app_url,
     )
 
 
@@ -109,6 +115,20 @@ def _new_supabase_client(settings: HostedSettings) -> Any:
     from supabase import create_client
 
     return create_client(settings.supabase_url, settings.supabase_key)
+
+
+def _signup_credentials(
+    email: str,
+    password: str,
+    app_url: str,
+) -> dict[str, Any]:
+    credentials: dict[str, Any] = {
+        "email": email,
+        "password": password,
+    }
+    if app_url:
+        credentials["options"] = {"email_redirect_to": app_url}
+    return credentials
 
 
 def _service_for_session(st: Any, settings: HostedSettings) -> ArenaService:
@@ -381,7 +401,11 @@ def _auth_card(st: Any, settings: HostedSettings) -> None:
                 try:
                     client = _new_supabase_client(settings)
                     response = client.auth.sign_up(
-                        {"email": email.strip(), "password": password}
+                        _signup_credentials(
+                            email.strip(),
+                            password,
+                            settings.app_url,
+                        )
                     )
                     if response.session is None:
                         st.success(
