@@ -1,0 +1,4 @@
+-e .
+streamlit>=1.55,<2
+supabase>=2.15,<3
+cryptography>=45,<47

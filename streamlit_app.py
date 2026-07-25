@@ -1,0 +1,17 @@
+"""Streamlit Community Cloud entrypoint."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from ai_delivery_arena.hosted import main  # noqa: E402
+
+
+main()

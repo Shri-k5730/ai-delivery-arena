@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="AI Delivery Arena. A local enterprise AI delivery simulation."
+    />
+    <title>AI Delivery Arena</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <button class="brand" id="homeButton" type="button" aria-label="Arena home">
+          <span class="brand-mark" aria-hidden="true">A</span>
+          <span>
+            <strong>AI Delivery Arena</strong>
+            <small>Procurement Under Pressure</small>
+          </span>
+        </button>
+        <div class="topbar-run hidden" id="topbarRun">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="topbarRunName"></span>
+          <span class="topbar-divider"></span>
+          <span id="saveStatus">Saved</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="landing" id="landing">
+          <div class="landing-hero">
+            <div class="eyebrow">Enterprise AI leadership simulation</div>
+            <h1>Make the decisions that determine whether AI survives contact with delivery.</h1>
+            <p class="hero-copy" id="scenarioPremise">
+              Loading the scenario contract.
+            </p>
+            <div class="scenario-stats" id="scenarioStats"></div>
+          </div>
+
+          <div class="launch-panel">
+            <div>
+              <span class="panel-kicker">First attempt</span>
+              <h2>Start a frozen, evidence-led run</h2>
+              <p>
+                You will make 20 decisions across five stages. Scores and gate
+                outcomes remain hidden until final submission.
+              </p>
+            </div>
+            <div class="saved-run-card hidden" id="savedRunCard">
+              <span class="saved-run-kicker">Most recent saved run</span>
+              <strong id="savedRunName"></strong>
+              <p id="savedRunProgress"></p>
+              <button
+                class="button button-secondary button-large"
+                id="resumeLatestRun"
+                type="button"
+              >
+                Resume saved run
+              </button>
+            </div>
+            <div class="launch-divider hidden" id="launchDivider">
+              <span>or start a separate run</span>
+            </div>
+            <label class="field">
+              <span>Run name</span>
+              <input id="runName" maxlength="128" autocomplete="off" />
+            </label>
+            <button class="button button-primary button-large" id="startRun" type="button">
+              Start first attempt
+            </button>
+            <p class="method-note">
+              Local only. No account, API key, or customer data required.
+            </p>
+          </div>
+
+          <section class="resume-panel" id="resumePanel">
+            <div class="section-heading">
+              <div>
+                <span class="panel-kicker">Saved locally</span>
+                <h2>Resume a run</h2>
+              </div>
+            </div>
+            <div class="run-list" id="runList"></div>
+          </section>
+        </section>
+
+        <section class="workspace hidden" id="workspace">
+          <aside class="stage-sidebar">
+            <div class="progress-block">
+              <div class="progress-label">
+                <span id="stageLabel">Frame</span>
+                <strong id="decisionCounter">0 / 20</strong>
+              </div>
+              <div class="progress-track" aria-label="Run progress">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+              <p id="stagePurpose"></p>
+            </div>
+            <nav class="stage-nav" id="stageNav" aria-label="Scenario stages"></nav>
+            <div class="history-block">
+              <div class="sidebar-title">Decision record</div>
+              <div class="history-list" id="historyList"></div>
+            </div>
+          </aside>
+
+          <section class="decision-column">
+            <div class="signal-strip" id="signalStrip"></div>
+            <article class="decision-card" id="decisionCard">
+              <div class="decision-meta">
+                <span class="decision-id" id="decisionId">D01</span>
+                <span id="decisionWeek">Week 0</span>
+              </div>
+              <h1 id="decisionTitle"></h1>
+              <p class="moment" id="decisionMoment"></p>
+              <div class="known-information" id="decisionInformation"></div>
+              <div class="crisis-card hidden" id="crisisCard">
+                <span class="crisis-label">Material event</span>
+                <p id="crisisText"></p>
+              </div>
+
+              <form id="decisionForm">
+                <fieldset class="option-group">
+                  <legend>Choose your action</legend>
+                  <div class="option-list" id="optionList"></div>
+                </fieldset>
+
+                <div class="custom-route hidden" id="customRoute">
+                  <label class="field">
+                    <span>Custom final route</span>
+                    <select id="terminalRoute">
+                      <option value="conditional_release">Conditional release</option>
+                      <option value="reduced_scope">Reduced-scope release</option>
+                      <option value="extended_pilot">Extend controlled pilot</option>
+                      <option value="pause">Pause</option>
+                      <option value="full_release">Full release</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="response-contract">
+                  <div class="response-heading">
+                    <div>
+                      <span class="panel-kicker">Decision record</span>
+                      <h2>Defend the action</h2>
+                    </div>
+                    <button class="text-button" id="showContract" type="button">
+                      What must be covered?
+                    </button>
+                  </div>
+                  <p class="response-requirement hidden" id="responseRequirement"></p>
+
+                  <label class="field field-full">
+                    <span>Rationale</span>
+                    <textarea
+                      id="rationale"
+                      rows="5"
+                      placeholder="State the decision and why it is proportionate now."
+                      required
+                    ></textarea>
+                  </label>
+                  <div class="field-grid">
+                    <label class="field">
+                      <span>Assumptions</span>
+                      <textarea
+                        id="assumptions"
+                        rows="3"
+                        placeholder="What must remain true?"
+                        required
+                      ></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Accountable owner</span>
+                      <textarea
+                        id="owner"
+                        rows="3"
+                        placeholder="Who owns the decision or risk?"
+                        required
+                      ></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Acceptance or stop condition</span>
+                      <textarea
+                        id="acceptance"
+                        rows="3"
+                        placeholder="What measurable condition changes the decision?"
+                        required
+                      ></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Material risk</span>
+                      <textarea
+                        id="risk"
+                        rows="3"
+                        placeholder="What could invalidate this action?"
+                        required
+                      ></textarea>
+                    </label>
+                  </div>
+
+                  <fieldset class="citation-group">
+                    <legend>Evidence cited in this decision</legend>
+                    <p>Select only evidence available at this point.</p>
+                    <div class="citation-list" id="citationList"></div>
+                  </fieldset>
+                </div>
+
+                <div class="commit-bar">
+                  <div>
+                    <strong>Commit is permanent.</strong>
+                    <span>You can resume later, but you cannot rewrite a first attempt.</span>
+                  </div>
+                  <button class="button button-primary" id="commitDecision" type="submit">
+                    Commit decision
+                  </button>
+                </div>
+              </form>
+            </article>
+          </section>
+
+          <aside class="evidence-sidebar">
+            <div class="evidence-header">
+              <div>
+                <span class="panel-kicker">Investigation</span>
+                <h2>Evidence desk</h2>
+              </div>
+              <div class="credit-meter">
+                <strong id="creditsRemaining">10</strong>
+                <span>credits left</span>
+              </div>
+            </div>
+            <p class="evidence-help">
+              Requests consume credits and arrive after their stated lead time.
+            </p>
+            <div class="evidence-list" id="evidenceList"></div>
+          </aside>
+        </section>
+
+        <section class="debrief hidden" id="debrief">
+          <div id="debriefContent"></div>
+        </section>
+      </main>
+    </div>
+    <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

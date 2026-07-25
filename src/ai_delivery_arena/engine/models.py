@@ -92,6 +92,11 @@ class GateStatus(StrEnum):
     NOT_APPLICABLE = "not_applicable"
 
 
+class RunStatus(StrEnum):
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
 @dataclass(frozen=True, slots=True)
 class ArtifactIdentity:
     schema_version: str
@@ -287,6 +292,16 @@ class DecisionRecord:
     summary: str
     facts: tuple[Fact, ...]
     selected_rule_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class RunInput:
+    """Normalized participant input that can be replayed at any decision boundary."""
+
+    run_id: str
+    investigation_schedule: tuple[EvidenceRequest, ...]
+    decisions: tuple[DecisionRecord, ...]
+    terminal_route: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

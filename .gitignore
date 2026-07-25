@@ -4,3 +4,12 @@ __pycache__/
 .venv/
 build/
 dist/
+.arena-runs/
+.arena-import-verifier/
+.arena-cloud-codec/
+.arena-import-codec/
+.arena-export-codec/
+.env
+.streamlit/secrets.example.toml
+.streamlit/secrets.toml
+.env.example

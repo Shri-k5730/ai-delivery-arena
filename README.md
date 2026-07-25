@@ -6,7 +6,72 @@ AI Delivery Arena places a person in charge of a realistic enterprise AI initiat
 
 The Arena does not test whether someone can define RAG, drift, agents, or model evaluation. It tests whether they can apply that knowledge while business value, data quality, governance, cost, delivery pressure, and adoption compete for attention.
 
-> **Current status:** The charter, paper scenario, scoring contract, bounded state model, and schema-validated reference fixtures are complete. There is no runnable Arena application or calibrated benchmark yet.
+> **Current status:** Hosted Beta v0.2 is ready for Streamlit Community Cloud with Supabase authentication and encrypted, user-scoped run persistence. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
+
+## Run the Hosted Beta locally
+
+Requirements: Python 3.11 or later and a Supabase project.
+
+1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql) in the Supabase SQL editor.
+2. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`.
+3. Add the Supabase URL, publishable/anon key, and a generated Arena signing key.
+4. Install and start:
+
+```bash
+python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+Generate the signing key with:
+
+```bash
+python scripts/generate_signing_key.py
+```
+
+Never commit `.streamlit/secrets.toml`. Never use a Supabase service-role key.
+See [`docs/HOSTED_BETA.md`](docs/HOSTED_BETA.md) for Streamlit Community Cloud
+deployment, authentication settings, security boundaries, local-run import, and
+free-tier constraints.
+
+## Run Arena Alpha
+
+Requirements: Python 3.11 or later. No API key, Node installation, database, or external service is required.
+
+From the repository root:
+
+```bash
+python scripts/start_arena.py
+```
+
+The application opens at `http://127.0.0.1:8765`. Runs are stored under
+`.arena-runs/` and are verified by deterministic replay whenever they are loaded.
+
+To validate the complete repository:
+
+```bash
+python scripts/validate_fixtures.py
+python -m unittest discover -s tests -v
+```
+
+See [`docs/ALPHA.md`](docs/ALPHA.md) for the participant workflow, local storage
+contract, assessment boundary, and troubleshooting.
+
+## v0.2 hosted beta contract
+
+| Element | v0.2 commitment |
+|---|---|
+| Public entry | Professional product page with sign-in and account creation |
+| Authentication | Supabase email/password authentication |
+| Hosted UI | Streamlit Community Cloud |
+| Cloud persistence | Supabase Postgres with RLS and encrypted canonical saves |
+| Run centre | One-click resume, completed attempts, and local-run import |
+| Decision loop | Brief, investigate, draft, review, commit, consequence, continue |
+| Drafts | Mutable cloud autosave until permanent commitment |
+| Completed runs | Replay-verified and immutable |
+| Debrief | Executive summary, gates, scorecard, perspectives, timeline, exports |
+| Local edition | Existing dependency-free server and `.arena-runs` remain supported |
+| Cost boundary | Designed for Streamlit Community Cloud and Supabase Free limits |
+| Assessment claim | Simulation assessment. Not certification or calibrated benchmark |
 
 ## Product charter
 
@@ -248,17 +313,19 @@ flowchart TD
     F --> G["Immutable first attempt and replay"]
 ```
 
-### Planned technical direction
+### Alpha technical implementation
 
-- React with TypeScript and Vite for the desktop-first interface
-- FastAPI and Pydantic for scenario, run, and evaluation APIs
-- SQLite for local run state and evidence
-- Versioned YAML or JSON scenario packs
-- Provider adapters for optional BYOK review
-- Deterministic mock reviewers for an offline, zero-key experience
-- Exportable JSON and printable HTML or PDF evidence packs
+- Dependency-free Python 3.11 runtime
+- Standard-library local HTTP server and responsive browser interface
+- Versioned JSON scenario packs and Markdown methodology contracts
+- Deterministic state transitions, crises, gates, and hash-chained ledger
+- Atomic JSON save/resume with optimistic revision checks
+- Structured local competency assessment kept separate from program health
+- Printable debrief and downloadable JSON evidence pack
 
-This is a direction, not an excuse to start implementation before the scenario and rubric are testable on paper.
+The production architecture may later move to a typed frontend, API framework, and
+transactional database. That migration must preserve the current replay, secrecy,
+gate, and immutability contracts rather than replacing them with framework behavior.
 
 ## Google Stitch wireframe brief
 

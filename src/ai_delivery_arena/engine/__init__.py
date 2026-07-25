@@ -7,9 +7,28 @@ from .gates import (
     GateEvaluationError,
     GateEvaluator,
 )
-from .replay import GateMismatchError, ReplayEngine, ReplayError, ReplayResult
+from .models import RunInput, RunStatus
+from .persistence import (
+    CompletedRunError,
+    JsonRunStore,
+    NonAppendOnlyUpdateError,
+    PersistenceError,
+    RestoredRun,
+    RevisionConflictError,
+    RunNotFoundError,
+    SaveCompatibilityError,
+    SaveIntegrityError,
+)
+from .replay import (
+    GateMismatchError,
+    ReplayEngine,
+    ReplayError,
+    ReplayResult,
+    RunCompletionError,
+)
 
 __all__ = [
+    "CompletedRunError",
     "FixtureBundle",
     "FixtureError",
     "GateAdjudication",
@@ -17,8 +36,19 @@ __all__ = [
     "GateEvaluationError",
     "GateEvaluator",
     "GateMismatchError",
+    "JsonRunStore",
+    "NonAppendOnlyUpdateError",
+    "PersistenceError",
     "ReplayEngine",
     "ReplayError",
     "ReplayResult",
+    "RestoredRun",
+    "RevisionConflictError",
+    "RunCompletionError",
+    "RunInput",
+    "RunNotFoundError",
+    "RunStatus",
+    "SaveCompatibilityError",
+    "SaveIntegrityError",
     "load_fixture_bundle",
 ]

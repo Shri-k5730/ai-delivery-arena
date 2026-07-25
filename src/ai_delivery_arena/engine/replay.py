@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from .evidence import EvidenceError, EvidencePortfolio
@@ -18,6 +18,8 @@ from .models import (
     HealthState,
     PreparednessStatus,
     ReferenceRun,
+    RunInput,
+    RunStatus,
     TransitionRule,
     thaw_json,
 )
@@ -52,6 +54,10 @@ class GateMismatchError(ReplayError):
     pass
 
 
+class RunCompletionError(ReplayError):
+    pass
+
+
 @dataclass(frozen=True, slots=True)
 class ResolvedCrisis:
     crisis_id: str
@@ -72,14 +78,15 @@ class PublicRunView:
 @dataclass(frozen=True, slots=True)
 class ReplayResult:
     run_id: str
-    terminal_route: str
+    status: RunStatus
+    terminal_route: str | None
     terminal_health: HealthState
     completed_decisions: tuple[str, ...]
     applied_rule_ids: tuple[str, ...]
     resolved_crises: tuple[ResolvedCrisis, ...]
     gate_observations: tuple[str, ...]
     gate_adjudications: tuple[GateAdjudication, ...]
-    release_valid: bool
+    release_valid: bool | None
     strictest_overall_cap: int | None
     expected_gates: tuple[GateExpectation, ...]
     ledger: RunLedger
@@ -88,6 +95,7 @@ class ReplayResult:
     def as_dict(self, include_hidden: bool = False) -> dict[str, Any]:
         result: dict[str, Any] = {
             "run_id": self.run_id,
+            "status": self.status.value,
             "terminal_route": self.terminal_route,
             "completed_decisions": list(self.public_view.completed_decisions),
             "operational_signals": list(self.public_view.operational_signals),
@@ -149,6 +157,45 @@ class ReplayEngine:
         return self.replay(self.bundle.reference_run(run_id), strict=strict)
 
     def replay(self, run: ReferenceRun, strict: bool = True) -> ReplayResult:
+        result = self.replay_input(
+            RunInput(
+                run_id=run.run_id,
+                investigation_schedule=run.investigation_schedule,
+                decisions=run.decisions,
+                terminal_route=run.terminal_route,
+            ),
+            strict=strict,
+        )
+        if strict:
+            expected_preparedness = {
+                item.crisis_id: item.status for item in run.crisis_preparedness
+            }
+            actual_preparedness = {
+                item.crisis_id: item.status for item in result.resolved_crises
+            }
+            if expected_preparedness != actual_preparedness:
+                differences = tuple(
+                    f"{crisis_id}: expected {expected_preparedness.get(crisis_id)}, "
+                    f"resolved {actual_preparedness.get(crisis_id)}"
+                    for crisis_id in sorted(
+                        set(expected_preparedness) | set(actual_preparedness)
+                    )
+                    if expected_preparedness.get(crisis_id)
+                    != actual_preparedness.get(crisis_id)
+                )
+                raise PreparednessMismatchError(
+                    f"{run.run_id}: " + "; ".join(differences)
+                )
+            self._validate_terminal_health(run, result.terminal_health)
+            self._validate_gate_expectations(
+                run,
+                GateEvaluation(result.gate_adjudications),
+            )
+        return replace(result, expected_gates=run.expected_gates)
+
+    def replay_input(self, run: RunInput, strict: bool = True) -> ReplayResult:
+        """Replay a normalized run prefix or a completed participant run."""
+
         scenario = self.bundle.scenario
         portfolio = EvidencePortfolio(
             catalogue=self.bundle.evidence,
@@ -157,9 +204,18 @@ class ReplayEngine:
         )
         expected_order = tuple(item.id for item in scenario.decisions)
         actual_order = tuple(item.decision_id for item in run.decisions)
-        if actual_order != expected_order:
+        if actual_order != expected_order[: len(actual_order)]:
             raise DecisionSequenceError(
-                f"{run.run_id}: decisions must execute in scenario order"
+                f"{run.run_id}: decisions must be a prefix of scenario order"
+            )
+        is_complete = len(actual_order) == len(expected_order)
+        if is_complete and run.terminal_route is None:
+            raise RunCompletionError(
+                f"{run.run_id}: a completed run requires a terminal route"
+            )
+        if not is_complete and run.terminal_route is not None:
+            raise RunCompletionError(
+                f"{run.run_id}: an in-progress run cannot declare a terminal route"
             )
 
         health = HealthState(scenario.health_model.initial_state)
@@ -176,9 +232,6 @@ class ReplayEngine:
         gate_observations: tuple[str, ...] = ()
         operational_signals: tuple[str, ...] = ()
         crisis_observations: tuple[tuple[str, str], ...] = ()
-        expected_preparedness = {
-            item.crisis_id: item.status for item in run.crisis_preparedness
-        }
 
         for record in run.decisions:
             definition = self._decisions[record.decision_id]
@@ -305,11 +358,6 @@ class ReplayEngine:
                     event_keys=event_keys,
                 )
                 status = self._resolve_preparedness(crisis, crisis_context)
-                if strict and expected_preparedness.get(crisis.id) != status:
-                    raise PreparednessMismatchError(
-                        f"{run.run_id}/{crisis.id}: resolved {status.value}; "
-                        f"fixture expects {expected_preparedness.get(crisis.id)}"
-                    )
                 before = health
                 outcome = crisis.outcome(status)
                 health = health.apply_all(outcome.effects, scenario.health_model.precision)
@@ -336,41 +384,47 @@ class ReplayEngine:
                 )
                 event_keys |= {f"crisis.{crisis.id}.resolved.{status.value}"}
 
-        if strict:
-            self._validate_terminal_health(run, health)
-        gate_context = PredicateContext(
-            facts=facts
-            + (
-                Fact(
-                    key="run.terminal_route",
-                    value=run.terminal_route,
-                    status=FactStatus.SUPPORTED,
-                    evidence_refs=(),
+        if is_complete:
+            gate_context = PredicateContext(
+                facts=facts
+                + (
+                    Fact(
+                        key="run.terminal_route",
+                        value=run.terminal_route,
+                        status=FactStatus.SUPPORTED,
+                        evidence_refs=(),
+                    ),
                 ),
-            ),
-            evidence=portfolio,
-            week=scenario.run_config.duration_weeks,
-            completed_decisions=completed_set,
-            event_keys=event_keys,
-        )
-        gate_evaluation = self._gate_evaluator.evaluate(gate_context)
-        if strict:
-            self._validate_gate_expectations(run, gate_evaluation)
-        for adjudication in gate_evaluation.adjudications:
-            ledger = ledger.append(
-                LedgerEventKind.GATE_ADJUDICATED,
+                evidence=portfolio,
                 week=scenario.run_config.duration_weeks,
-                payload=adjudication.as_dict(),
+                completed_decisions=completed_set,
+                event_keys=event_keys,
             )
-        ledger = ledger.append(
-            LedgerEventKind.RUN_COMPLETED,
-            week=scenario.run_config.duration_weeks,
-            payload={
-                "run_id": run.run_id,
-                "terminal_route": run.terminal_route,
-                "terminal_health": health.as_dict(),
-            },
-        )
+            gate_evaluation = self._gate_evaluator.evaluate(gate_context)
+            for adjudication in gate_evaluation.adjudications:
+                ledger = ledger.append(
+                    LedgerEventKind.GATE_ADJUDICATED,
+                    week=scenario.run_config.duration_weeks,
+                    payload=adjudication.as_dict(),
+                )
+            ledger = ledger.append(
+                LedgerEventKind.RUN_COMPLETED,
+                week=scenario.run_config.duration_weeks,
+                payload={
+                    "run_id": run.run_id,
+                    "terminal_route": run.terminal_route,
+                    "terminal_health": health.as_dict(),
+                },
+            )
+            gate_adjudications = gate_evaluation.adjudications
+            release_valid: bool | None = gate_evaluation.release_valid
+            strictest_overall_cap = gate_evaluation.strictest_overall_cap
+            status = RunStatus.COMPLETED
+        else:
+            gate_adjudications = ()
+            release_valid = None
+            strictest_overall_cap = None
+            status = RunStatus.IN_PROGRESS
         if not ledger.verify():
             raise ReplayError(f"{run.run_id}: ledger hash-chain verification failed")
 
@@ -382,16 +436,17 @@ class ReplayEngine:
         )
         return ReplayResult(
             run_id=run.run_id,
+            status=status,
             terminal_route=run.terminal_route,
             terminal_health=health,
             completed_decisions=completed,
             applied_rule_ids=applied_rule_ids,
             resolved_crises=resolved_crises,
             gate_observations=gate_observations,
-            gate_adjudications=gate_evaluation.adjudications,
-            release_valid=gate_evaluation.release_valid,
-            strictest_overall_cap=gate_evaluation.strictest_overall_cap,
-            expected_gates=run.expected_gates,
+            gate_adjudications=gate_adjudications,
+            release_valid=release_valid,
+            strictest_overall_cap=strictest_overall_cap,
+            expected_gates=(),
             ledger=ledger,
             public_view=public_view,
         )

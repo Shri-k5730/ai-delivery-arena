@@ -6,7 +6,7 @@ The engine executes normalized scenario facts. It does not infer leadership qual
 
 Implemented:
 
-- frozen typed models for all five fixture artifacts;
+- frozen typed models for all seven fixture artifacts;
 - version and cross-reference checks during fixture loading;
 - investigation-credit, request, arrival, availability, and verification mechanics;
 - last-recorded normalized-fact evaluation with explicit status checks;
@@ -19,13 +19,16 @@ Implemented:
 - gate caps, dimension caps, and release-invalid treatments;
 - PT-09, an adversarial run with one isolated concealed claim-integrity breach;
 - immutable hash-chained event ledgers;
+- deterministic prefix replay at every decision boundary;
+- atomic JSON save/resume with optimistic revisions and append-only updates;
+- semantic fixture fingerprints and replay-verified ledger checkpoints;
+- optional HMAC-SHA256 save authentication;
 - a first-attempt-safe projection that omits health state and gate expectations; and
 - exact replay tests for RR-A, RR-B, RR-C, and PT-09.
 
 Not implemented:
 
 - free-text response normalization;
-- participant save/resume storage;
 - criterion-level competency scoring;
 - LLM critique or evaluator disagreement;
 - benchmark calibration.
@@ -47,6 +50,7 @@ src/ai_delivery_arena/
     ├── gates.py
     ├── ledger.py
     ├── models.py
+    ├── persistence.py
     ├── predicates.py
     └── replay.py
 ```
@@ -108,9 +112,20 @@ pass.
 PT-09 proves the intended discrimination: G6 fails, the other six gates pass, the
 overall-score cap is 49, and the hidden health state remains differentiated.
 
+## Persistence boundary
+
+`JsonRunStore` persists normalized investigation requests and an immutable decision
+prefix. It also stores the full derived ledger as a checkpoint. Loading does not
+hydrate hidden state from JSON. It verifies the envelope, fixture identity and
+fingerprint, replays the input, and compares the new ledger event by event.
+
+The local adapter uses atomic file replacement and optimistic revisions. It is a
+single-writer implementation, not a substitute for database transactions in a
+multi-user deployment. See `docs/PERSISTENCE.md`.
+
 ## Next contract
 
-The next implementation layer is participant run persistence and deterministic
-save/resume. UI work should begin only after run IDs, fixture version, investigation
-state, decision records, ledger head, and completion status can be stored and restored
-without changing replay results.
+The next implementation layer is criterion-level competency scoring from cited,
+normalized evidence. It must remain separate from hidden program health and critical
+gate adjudication. UI work should not invent a composite score before that contract
+exists.
