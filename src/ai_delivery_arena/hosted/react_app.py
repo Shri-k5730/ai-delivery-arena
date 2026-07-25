@@ -21,7 +21,7 @@ from .app import (
 )
 
 
-PRODUCT_VERSION = "0.3.0"
+PRODUCT_VERSION = "0.3.1"
 VALID_VIEWS = {
     "centre",
     "briefing",

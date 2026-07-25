@@ -18,6 +18,8 @@ from ai_delivery_arena.hosted.app import (  # noqa: E402
     _legacy_jwt_role,
     _signup_credentials,
 )
+from ai_delivery_arena.hosted import main as hosted_main  # noqa: E402
+from ai_delivery_arena.hosted.react_app import main as react_main  # noqa: E402
 
 
 def fake_jwt(role: str) -> str:
@@ -28,6 +30,9 @@ def fake_jwt(role: str) -> str:
 
 
 class HostedAppTestCase(unittest.TestCase):
+    def test_public_entrypoint_uses_the_react_product_shell(self) -> None:
+        self.assertIs(hosted_main, react_main)
+
     def test_service_role_key_is_detectable_before_configuration(self) -> None:
         self.assertEqual("service_role", _legacy_jwt_role(fake_jwt("service_role")))
         self.assertEqual("anon", _legacy_jwt_role(fake_jwt("anon")))

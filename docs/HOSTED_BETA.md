@@ -1,14 +1,18 @@
-# Hosted Beta v0.2
+# Hosted Beta v0.3.1
 
 AI Delivery Arena Hosted Beta uses one public Streamlit application and one
 Supabase project. The deterministic engine, scenario fixtures, scoring rules,
-and local edition remain in the same repository.
+and local edition remain in the same repository. A compiled React and
+TypeScript component owns the visible product interface. Streamlit remains the
+Python runtime and deployment host.
 
 ## Architecture
 
 ```text
 Browser
   -> Streamlit Community Cloud
+       -> compiled React product interface
+       -> typed component events
        -> deterministic Python engine
        -> Supabase Auth
        -> Supabase Postgres
@@ -89,7 +93,8 @@ unreadable. Store an offline copy in a password manager.
 
 The repository's `requirements.txt` installs the package, Streamlit, Supabase
 client, and the cryptography library. GitHub commits to `main` trigger Streamlit
-redeployment.
+redeployment. The compiled React assets are committed and packaged, so
+Streamlit Cloud does not need Node or a frontend build step.
 
 ## 4. Validate the hosted boundary
 
@@ -156,6 +161,6 @@ Streamlit storage, so hibernation or redeployment does not lose committed runs.
 
 ## Release boundary
 
-Hosted Beta v0.2 is appropriate for product learning and a controlled public
+Hosted Beta v0.3.1 is appropriate for product learning and a controlled public
 beta. It is not positioned as a production-grade assessment service, a hiring
 decision system, certification, or independently calibrated benchmark.

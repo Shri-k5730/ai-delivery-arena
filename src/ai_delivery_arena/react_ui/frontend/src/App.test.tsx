@@ -9,7 +9,7 @@ const base: ArenaModel = {
   product: {
     name: "AI Delivery Arena",
     tagline: "Judgment under pressure",
-    version: "0.3.0",
+    version: "0.3.1",
     status: "Hosted Beta",
   },
   screen: "marketing",

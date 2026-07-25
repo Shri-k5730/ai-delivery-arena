@@ -6,7 +6,7 @@ AI Delivery Arena places a person in charge of a realistic enterprise AI initiat
 
 The Arena does not test whether someone can define RAG, drift, agents, or model evaluation. It tests whether they can apply that knowledge while business value, data quality, governance, cost, delivery pressure, and adoption compete for attention.
 
-> **Current status:** Hosted Beta v0.2 is ready for Streamlit Community Cloud with Supabase authentication and encrypted, user-scoped run persistence. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
+> **Current status:** Hosted Beta v0.3.1 uses a full React and TypeScript product interface on Streamlit Community Cloud, with Supabase authentication and encrypted, user-scoped run persistence. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
 
 ## Run the Hosted Beta locally
 
@@ -57,13 +57,13 @@ python -m unittest discover -s tests -v
 See [`docs/ALPHA.md`](docs/ALPHA.md) for the participant workflow, local storage
 contract, assessment boundary, and troubleshooting.
 
-## v0.2 hosted beta contract
+## v0.3.1 hosted beta contract
 
-| Element | v0.2 commitment |
+| Element | v0.3.1 commitment |
 |---|---|
 | Public entry | Professional product page with sign-in and account creation |
 | Authentication | Supabase email/password authentication |
-| Hosted UI | Streamlit Community Cloud |
+| Hosted UI | React and TypeScript interface with Streamlit as the Python runtime |
 | Cloud persistence | Supabase Postgres with RLS and encrypted canonical saves |
 | Run centre | One-click resume, completed attempts, and local-run import |
 | Decision loop | Brief, investigate, draft, review, commit, consequence, continue |

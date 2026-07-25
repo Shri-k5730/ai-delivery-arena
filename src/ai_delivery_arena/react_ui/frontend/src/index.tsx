@@ -37,14 +37,6 @@ const ArenaRoot: FrontendRenderer<ArenaState, ArenaModel> = (args) => {
       />
     </StrictMode>,
   );
-
-  return () => {
-    const mounted = roots.get(parentElement);
-    if (mounted) {
-      mounted.unmount();
-      roots.delete(parentElement);
-    }
-  };
 };
 
 export default ArenaRoot;

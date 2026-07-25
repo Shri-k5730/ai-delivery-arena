@@ -648,6 +648,10 @@ summary:focus-visible {
   font-size: 14px;
 }
 
+.auth-panel > .button {
+  margin-top: 20px;
+}
+
 .status-pill {
   display: inline-flex;
   min-height: 24px;
@@ -1944,7 +1948,7 @@ summary:focus-visible {
 .known-info p {
   margin: 3px 0 0;
   color: var(--ink-700);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
 }
 
@@ -1999,7 +2003,7 @@ summary:focus-visible {
 .section-title h2 {
   margin: 0;
   color: var(--navy-900);
-  font-size: 16px;
+  font-size: 17px;
 }
 
 .section-title p {
@@ -2058,7 +2062,7 @@ summary:focus-visible {
 }
 
 .option-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 630;
   line-height: 1.45;
 }
@@ -2285,7 +2289,7 @@ summary:focus-visible {
   border: 0;
   color: var(--ink-500);
   background: transparent;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 720;
   cursor: pointer;
 }
@@ -2381,7 +2385,7 @@ summary:focus-visible {
   border-radius: 7px;
   color: var(--ink-700);
   background: #fff;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .evidence-tools input {
@@ -2446,13 +2450,13 @@ summary:focus-visible {
 
 .evidence-summary small {
   color: var(--ink-400);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .evidence-summary strong {
   margin-top: 2px;
   color: var(--ink-700);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .evidence-status {
@@ -2460,7 +2464,7 @@ summary:focus-visible {
   border-radius: 5px;
   color: var(--ink-500);
   background: var(--surface-soft);
-  font-size: 10px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -2471,7 +2475,7 @@ summary:focus-visible {
 .evidence-detail > p {
   margin: 0 0 8px;
   color: var(--ink-500);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 
@@ -2486,7 +2490,7 @@ summary:focus-visible {
   border-radius: 4px;
   color: var(--ink-500);
   background: var(--surface-soft);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .evidence-detail .button {
