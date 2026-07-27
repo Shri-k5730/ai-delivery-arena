@@ -1,15 +1,18 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App, { type ArenaModel } from "./App";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+});
 
 const base: ArenaModel = {
   product: {
     name: "AI Delivery Arena",
     tagline: "Judgment under pressure",
-    version: "0.3.1",
+    version: "0.3.2",
     status: "Hosted Beta",
   },
   screen: "marketing",
@@ -99,6 +102,114 @@ describe("AI Delivery Arena React product", () => {
     expect(screen.getByRole("radio", { name: /Bound the pilot/ })).toBeInTheDocument();
     expect(screen.queryByText(/^G1$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/terminal_health/i)).not.toBeInTheDocument();
+  });
+
+  it("explains evidence mechanics without exposing an answer path", () => {
+    render(
+      <App
+        data={{
+          ...base,
+          screen: "briefing",
+          configured: false,
+          local_mode: true,
+          authenticated: true,
+          briefing: {
+            scenario: { premise: "A fixed synthetic enterprise mandate." },
+            stages: [],
+          },
+        }}
+        emit={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("How evidence and signals work")).toBeInTheDocument();
+    expect(screen.getByText("Cite now")).toBeInTheDocument();
+    expect(screen.getByText("Order for later")).toBeInTheDocument();
+    expect(screen.getByText("Due Week X")).toBeInTheDocument();
+    expect(screen.queryByText(/best answer/i)).not.toBeInTheDocument();
+  });
+
+  it("keeps new signal and evidence badges until each context is opened", () => {
+    const activityRun = {
+      ...run,
+      revision: 5,
+      operational_signals: [
+        "The sponsor accepts the bounded scope.",
+        "Finance marks the benefit claim provisional.",
+      ],
+      evidence: [
+        ...run.evidence,
+        {
+          id: "EV-FINANCE-01",
+          title: "Finance baseline review",
+          state: "available",
+          reveal: "The baseline cannot yet support the headline claim.",
+          cost: 1,
+          lead_time_weeks: 2,
+          request_week: 1,
+          arrival_week: 3,
+        },
+        {
+          id: "EV-USER-01",
+          title: "Buyer observation study",
+          state: "requestable",
+          reveal: null,
+          cost: 1,
+          lead_time_weeks: 1,
+          request_week: null,
+          arrival_week: null,
+        },
+        {
+          id: "EV-VOLUME-01",
+          title: "Transaction-volume model",
+          state: "requested",
+          reveal: null,
+          cost: 1,
+          lead_time_weeks: 1,
+          request_week: 2,
+          arrival_week: 4,
+        },
+      ],
+    };
+    render(
+      <App
+        data={{
+          ...base,
+          screen: "decision",
+          configured: false,
+          local_mode: true,
+          authenticated: true,
+          run: activityRun,
+          stages: [{ id: "S1", label: "Mandate", decision_ids: ["D01"] }],
+          draft: {
+            option_id: null,
+            rationale: "",
+            assumptions: "",
+            owner: "",
+            acceptance_condition: "",
+            risk: "",
+            evidence_refs: [],
+            terminal_route: "conditional_release",
+          },
+        }}
+        emit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Changes since your last decision")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Signals · 2 new/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Evidence · 1 arrived/ })).toBeInTheDocument();
+    expect(screen.getAllByText("Cite now").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Order for later").length).toBeGreaterThan(0);
+    expect(screen.getByText("Due Week 4")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /View signals/ }));
+    expect(screen.getByRole("tab", { name: "Signals" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Evidence · 1 arrived/ })).toBeInTheDocument();
+    expect(screen.getByText("Changes since your last decision")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /View evidence/ }));
+    expect(screen.getByRole("tab", { name: "Evidence" })).toBeInTheDocument();
+    expect(screen.queryByText("Changes since your last decision")).not.toBeInTheDocument();
   });
 
   it("renders a consequence boundary after permanent commitment", () => {

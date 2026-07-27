@@ -4,6 +4,7 @@ __pycache__/
 .venv/
 /build/
 /dist/
+node_modules/
 .arena-runs/
 .arena-import-verifier/
 .arena-cloud-codec/
@@ -11,4 +12,3 @@ __pycache__/
 .arena-export-codec/
 .env
 .streamlit/secrets.toml
-node_modules/

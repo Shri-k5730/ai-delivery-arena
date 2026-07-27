@@ -1,4 +1,4 @@
-"""Hosted React product experience for AI Delivery Arena."""
+"""Hosted Streamlit runtime with a full React product experience."""
 
 from .react_app import main
 

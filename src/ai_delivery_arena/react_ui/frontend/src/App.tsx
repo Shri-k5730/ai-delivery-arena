@@ -86,6 +86,11 @@ type Draft = {
   terminal_route: string;
 };
 
+type SeenActivity = {
+  signalCount: number;
+  evidenceIds: string[];
+};
+
 type Emit = (type: string, payload?: Record<string, unknown>) => void;
 
 const EMPTY_DRAFT: Draft = {
@@ -113,6 +118,40 @@ function dateLabel(value: string): string {
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+function activityStorageKey(data: ArenaModel, runId: string): string {
+  const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
+  return `ai-delivery-arena:seen-activity:${owner}:${runId}`;
+}
+
+function readSeenActivity(key: string): SeenActivity {
+  if (typeof window === "undefined") {
+    return { signalCount: 0, evidenceIds: [] };
+  }
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(key) ?? "{}");
+    return {
+      signalCount:
+        typeof stored.signalCount === "number" && stored.signalCount >= 0
+          ? stored.signalCount
+          : 0,
+      evidenceIds: Array.isArray(stored.evidenceIds)
+        ? stored.evidenceIds.filter((item: unknown) => typeof item === "string")
+        : [],
+    };
+  } catch {
+    return { signalCount: 0, evidenceIds: [] };
+  }
+}
+
+function writeSeenActivity(key: string, value: SeenActivity): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Badges still work for the current render when browser storage is blocked.
+  }
 }
 
 function downloadJson(name: string, value: unknown): void {
@@ -923,6 +962,13 @@ function Briefing({ data, emit }: { data: ArenaModel; emit: Emit }) {
               <li><Eye size={17} /><span><strong>No live coaching</strong>Scores and preferred paths stay concealed.</span></li>
               <li><BadgeCheck size={17} /><span><strong>Debrief after D20</strong>Critical gates and criterion evidence then unlock.</span></li>
             </ul>
+            <div className="mechanics-box">
+              <strong>How evidence and signals work</strong>
+              <p><span>Cite now</span>Available evidence can support the decision you are recording.</p>
+              <p><span>Order for later</span>Spend a credit now. It cannot support today’s decision.</p>
+              <p><span>Due Week X</span>The ordered finding becomes citable in that programme week.</p>
+              <p><span>Signals</span>Observable changes appear after commitment and stay marked until opened.</p>
+            </div>
             <div className="time-box">
               <Clock3 size={19} />
               <div><strong>75–90 minutes</strong><span>Save and resume at any point</span></div>
@@ -976,6 +1022,13 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const [issues, setIssues] = useState<string[]>([]);
   const lastSent = useRef(JSON.stringify(data.draft ?? EMPTY_DRAFT));
   const initialized = useRef(decisionKey);
+  const activityKey = useMemo(
+    () => activityStorageKey(data, String(run.run_id)),
+    [data.local_mode, data.user?.id, run.run_id],
+  );
+  const [seenActivity, setSeenActivity] = useState<SeenActivity>(() =>
+    readSeenActivity(activityKey),
+  );
 
   useEffect(() => {
     if (initialized.current !== decisionKey) {
@@ -987,6 +1040,10 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
       setBusy(null);
     }
   }, [decisionKey, data.draft]);
+
+  useEffect(() => {
+    setSeenActivity(readSeenActivity(activityKey));
+  }, [activityKey]);
 
   useEffect(() => {
     if (data.notice || data.sync) setBusy(null);
@@ -1016,22 +1073,64 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const availableEvidence: JsonMap[] = (run.evidence ?? []).filter((item: JsonMap) =>
     ["available", "verified"].includes(item.state),
   );
+  const allSignals: string[] = run.operational_signals ?? [];
+  const arrivedEvidence: JsonMap[] = availableEvidence.filter(
+    (item: JsonMap) => item.request_week !== null && item.request_week !== undefined,
+  );
+  const arrivedEvidenceIds = new Set(arrivedEvidence.map((item: JsonMap) => item.id));
+  const unreadSignals = allSignals.slice(
+    Math.min(seenActivity.signalCount, allSignals.length),
+  );
+  const unreadEvidence = arrivedEvidence.filter(
+    (item: JsonMap) => !seenActivity.evidenceIds.includes(item.id),
+  );
   const currentCrisis = (run.crises ?? []).find(
     (item: JsonMap) => item.linked_decision === decision.id,
   );
 
-  const filteredEvidence = (run.evidence ?? []).filter((item: JsonMap) => {
-    const matchesText = `${item.id} ${item.title}`.toLowerCase().includes(evidenceSearch.toLowerCase());
-    const matchesFilter =
-      evidenceFilter === "all" ||
-      (evidenceFilter === "available" && ["available", "verified"].includes(item.state)) ||
-      (evidenceFilter === "requested" && item.state === "requested") ||
-      (evidenceFilter === "requestable" && item.state === "requestable");
-    return matchesText && matchesFilter;
-  });
+  const filteredEvidence = (run.evidence ?? [])
+    .filter((item: JsonMap) => {
+      const matchesText = `${item.id} ${item.title}`.toLowerCase().includes(evidenceSearch.toLowerCase());
+      const matchesFilter =
+        evidenceFilter === "all" ||
+        (evidenceFilter === "available" && ["available", "verified"].includes(item.state)) ||
+        (evidenceFilter === "requested" && item.state === "requested") ||
+        (evidenceFilter === "requestable" && item.state === "requestable");
+      return matchesText && matchesFilter;
+    })
+    .sort(
+      (left: JsonMap, right: JsonMap) =>
+        Number(arrivedEvidenceIds.has(right.id)) -
+        Number(arrivedEvidenceIds.has(left.id)),
+    );
 
   const update = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
+
+  const openContext = (tab: "evidence" | "signals" | "record") => {
+    setContextTab(tab);
+    if (tab === "record") return;
+    if (tab === "evidence") {
+      setEvidenceFilter("available");
+      setEvidenceSearch("");
+    }
+    setSeenActivity((current) => {
+      const next: SeenActivity = {
+        signalCount: tab === "signals" ? allSignals.length : current.signalCount,
+        evidenceIds:
+          tab === "evidence"
+            ? Array.from(
+                new Set([
+                  ...current.evidenceIds,
+                  ...arrivedEvidence.map((item: JsonMap) => item.id),
+                ]),
+              )
+            : current.evidenceIds,
+      };
+      writeSeenActivity(activityKey, next);
+      return next;
+    });
+  };
 
   const review = () => {
     const nextIssues = draftIssues(draft);
@@ -1077,6 +1176,42 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
 
         <div className="cockpit-grid">
           <section className="decision-workspace">
+            {(unreadSignals.length > 0 || unreadEvidence.length > 0) && (
+              <section className="change-strip" aria-live="polite">
+                <span className="change-strip-icon"><Sparkles size={18} /></span>
+                <div>
+                  <strong>Changes since your last decision</strong>
+                  <p>
+                    {[
+                      unreadSignals.length > 0
+                        ? `${unreadSignals.length} new operational ${
+                            unreadSignals.length === 1 ? "signal" : "signals"
+                          }`
+                        : null,
+                      unreadEvidence.length > 0
+                        ? `${unreadEvidence.length} evidence ${
+                            unreadEvidence.length === 1 ? "item has" : "items have"
+                          } arrived`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </div>
+                <div className="change-strip-actions">
+                  {unreadSignals.length > 0 && (
+                    <button type="button" onClick={() => openContext("signals")}>
+                      View signals <ChevronRight size={15} />
+                    </button>
+                  )}
+                  {unreadEvidence.length > 0 && (
+                    <button type="button" onClick={() => openContext("evidence")}>
+                      View evidence <ChevronRight size={15} />
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
             <article className="situation-panel">
               <div className="panel-label"><Target size={15} /> Decision moment</div>
               <p className="decision-moment">{decision.moment}</p>
@@ -1174,7 +1309,7 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
                 </label>
               </div>
               <fieldset className="citation-field">
-                <legend>Evidence cited <small>Optional, but must already be available</small></legend>
+                <legend>Evidence cited <small>Optional. Select only items marked Cite now.</small></legend>
                 {availableEvidence.length === 0 ? (
                   <p>No evidence is currently available to cite.</p>
                 ) : (
@@ -1229,8 +1364,20 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
           <aside className="context-panel">
             <div className="context-tabs" role="tablist">
               {[
-                ["evidence", "Evidence", BookOpen],
-                ["signals", "Signals", Zap],
+                [
+                  "evidence",
+                  unreadEvidence.length > 0
+                    ? `Evidence · ${unreadEvidence.length} arrived`
+                    : "Evidence",
+                  BookOpen,
+                ],
+                [
+                  "signals",
+                  unreadSignals.length > 0
+                    ? `Signals · ${unreadSignals.length} new`
+                    : "Signals",
+                  Zap,
+                ],
                 ["record", "Record", History],
               ].map(([id, label, Icon]: any) => (
                 <button
@@ -1239,9 +1386,9 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
                   className={contextTab === id ? "active" : ""}
                   role="tab"
                   aria-selected={contextTab === id}
-                  onClick={() => setContextTab(id)}
+                  onClick={() => openContext(id)}
                 >
-                  <Icon size={15} /> {label}
+                  <Icon size={15} /> <span>{label}</span>
                 </button>
               ))}
             </div>
@@ -1256,10 +1403,10 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
                 <div className="evidence-tools">
                   <label><Search size={15} /><input value={evidenceSearch} onChange={(event) => setEvidenceSearch(event.target.value)} placeholder="Search evidence" /></label>
                   <select value={evidenceFilter} onChange={(event) => setEvidenceFilter(event.target.value)}>
-                    <option value="all">All status</option>
-                    <option value="available">Available</option>
-                    <option value="requested">In transit</option>
-                    <option value="requestable">Not requested</option>
+                    <option value="all">All states</option>
+                    <option value="available">Cite now</option>
+                    <option value="requested">Due later</option>
+                    <option value="requestable">Order for later</option>
                   </select>
                 </div>
                 <div className="evidence-list">
@@ -1267,6 +1414,7 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
                     <EvidenceItem
                       key={item.id}
                       item={item}
+                      arrived={arrivedEvidenceIds.has(item.id)}
                       credits={run.credits?.remaining}
                       busy={busy === `evidence:${item.id}`}
                       onRequest={() => {
@@ -1327,26 +1475,31 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
 
 function EvidenceItem({
   item,
+  arrived,
   credits,
   busy,
   onRequest,
 }: {
   item: JsonMap;
+  arrived: boolean;
   credits: number;
   busy: boolean;
   onRequest: () => void;
 }) {
   const [open, setOpen] = useState(["available", "verified"].includes(item.state));
   const stateLabel: Record<string, string> = {
-    available: "Available",
-    verified: "Verified",
-    requested: "In transit",
-    requestable: "Not requested",
-    unavailable: "Unavailable",
+    available: "Cite now",
+    verified: "Cite now",
+    requested:
+      item.arrival_week !== null && item.arrival_week !== undefined
+        ? `Due Week ${item.arrival_week}`
+        : "Due later",
+    requestable: "Order for later",
+    unavailable: "Window closed",
   };
   const requestable = item.state === "requestable" && credits >= item.cost;
   return (
-    <article className={cx("evidence-item", `evidence-${item.state}`)}>
+    <article className={cx("evidence-item", `evidence-${item.state}`, arrived && "evidence-arrived")}>
       <button className="evidence-summary" type="button" onClick={() => setOpen((value) => !value)}>
         <span className="evidence-state-icon">
           {["available", "verified"].includes(item.state) ? <Check size={14} /> : item.state === "requested" ? <Clock3 size={14} /> : <FileJson size={14} />}
@@ -1360,17 +1513,21 @@ function EvidenceItem({
           {item.reveal ? (
             <p>{item.reveal}</p>
           ) : item.state === "requested" ? (
-            <p>Requested week {item.request_week}. Expected week {item.arrival_week}.</p>
+            <p>Ordered in Week {item.request_week}. It becomes citable in Week {item.arrival_week}.</p>
           ) : (
-            <p>The finding remains sealed until requested and available.</p>
+            <p>Order this finding now. Its contents remain sealed until the due week.</p>
           )}
           <div>
             <span>{item.cost === 0 ? "Included" : `${item.cost} credit`}</span>
-            <span>{item.lead_time_weeks} week lead</span>
+            {arrived ? (
+              <span>Arrived Week {item.arrival_week}</span>
+            ) : (
+              <span>{item.lead_time_weeks} week lead</span>
+            )}
           </div>
           {requestable && (
             <Button variant="secondary" className="button-full" busy={busy} onClick={onRequest}>
-              Request evidence {!busy && <ArrowRight size={15} />}
+              Order for later {!busy && <ArrowRight size={15} />}
             </Button>
           )}
           {item.state === "requestable" && !requestable && (
@@ -1754,6 +1911,18 @@ function Fatal({ data }: { data: ArenaModel }) {
 
 export default function App({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const screen = data.screen;
+  const navigationKey = `${screen}:${data.run?.run_id ?? ""}:${
+    data.run?.current_decision?.id ?? ""
+  }`;
+  useEffect(() => {
+    const streamlitMain = document.querySelector<HTMLElement>(
+      '[data-testid="stMain"]',
+    );
+    if (streamlitMain) streamlitMain.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [navigationKey]);
+
   return (
     <>
       {screen === "marketing" && <Marketing data={data} emit={emit} />}
