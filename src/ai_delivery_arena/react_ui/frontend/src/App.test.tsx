@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import App, { type ArenaModel } from "./App";
@@ -6,13 +6,14 @@ import App, { type ArenaModel } from "./App";
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.useRealTimers();
 });
 
 const base: ArenaModel = {
   product: {
     name: "AI Delivery Arena",
     tagline: "Judgment under pressure",
-    version: "0.3.2",
+    version: "0.4.0",
     status: "Hosted Beta",
   },
   screen: "marketing",
@@ -210,6 +211,163 @@ describe("AI Delivery Arena React product", () => {
     fireEvent.click(screen.getByRole("button", { name: /View evidence/ }));
     expect(screen.getByRole("tab", { name: "Evidence" })).toBeInTheDocument();
     expect(screen.queryByText("Changes since your last decision")).not.toBeInTheDocument();
+  });
+
+  it("buffers drafts immediately and batches cloud sync after ten seconds", () => {
+    vi.useFakeTimers();
+    const emit = vi.fn();
+    const view = {
+      ...base,
+      screen: "decision",
+      configured: false,
+      local_mode: true,
+      authenticated: true,
+      run,
+      stages: [{ id: "S1", label: "Mandate", decision_ids: ["D01"] }],
+      draft: {
+        option_id: null,
+        rationale: "",
+        assumptions: "",
+        owner: "",
+        acceptance_condition: "",
+        risk: "",
+        evidence_refs: [],
+        terminal_route: "conditional_release",
+      },
+    };
+    const first = render(<App data={view} emit={emit} />);
+    fireEvent.change(
+      screen.getByPlaceholderText(/State what you will do/),
+      { target: { value: "Recovered local rationale" } },
+    );
+
+    expect(screen.getAllByText("Saved on this device").length).toBeGreaterThan(0);
+    expect(
+      Array.from({ length: window.localStorage.length }, (_, index) =>
+        window.localStorage.key(index),
+      ).some((key) => key?.startsWith("ai-delivery-arena:draft:")),
+    ).toBe(true);
+
+    act(() => vi.advanceTimersByTime(9_999));
+    expect(
+      emit.mock.calls.some(([type]) => type === "save_draft"),
+    ).toBe(false);
+    act(() => vi.advanceTimersByTime(1));
+    expect(emit).toHaveBeenCalledWith(
+      "save_draft",
+      expect.objectContaining({
+        run_id: "attempt-one",
+        decision_id: "D01",
+        expected_revision: 1,
+        sync_id: expect.any(String),
+        draft: expect.objectContaining({
+          rationale: "Recovered local rationale",
+        }),
+      }),
+    );
+
+    first.unmount();
+    render(<App data={view} emit={vi.fn()} />);
+    expect(screen.getByDisplayValue("Recovered local rationale")).toBeInTheDocument();
+  });
+
+  it("forces the current draft into review and navigation actions", () => {
+    const emit = vi.fn();
+    const actionRun = {
+      ...run,
+      evidence: [
+        ...run.evidence,
+        {
+          id: "EV-USER-01",
+          title: "Buyer observation study",
+          state: "requestable",
+          reveal: null,
+          cost: 1,
+          lead_time_weeks: 1,
+        },
+      ],
+    };
+    render(
+      <App
+        data={{
+          ...base,
+          screen: "decision",
+          configured: false,
+          local_mode: true,
+          authenticated: true,
+          run: actionRun,
+          stages: [{ id: "S1", label: "Mandate", decision_ids: ["D01"] }],
+          draft: {
+            option_id: null,
+            rationale: "",
+            assumptions: "",
+            owner: "",
+            acceptance_condition: "",
+            risk: "",
+            evidence_refs: [],
+            terminal_route: "conditional_release",
+          },
+        }}
+        emit={emit}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /Bound the pilot/ }));
+    fireEvent.change(screen.getByPlaceholderText(/State what you will do/), {
+      target: {
+        value:
+          "Use a bounded pilot because the current evidence supports controlled scope.",
+      },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Named role or person"), {
+      target: { value: "CPO" },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText("A measurable threshold or condition"),
+      { target: { value: "Stop when the agreed threshold is missed." } },
+    );
+    fireEvent.change(screen.getByPlaceholderText("What must remain true?"), {
+      target: { value: "The sponsor accepts a bounded pilot." },
+    });
+    fireEvent.change(screen.getByPlaceholderText("What could invalidate this action?"), {
+      target: { value: "The baseline may fail validation." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /EV-USER-01.*Order for later/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Order for later" }));
+    expect(emit).toHaveBeenCalledWith(
+      "request_evidence",
+      expect.objectContaining({
+        evidence_id: "EV-USER-01",
+        sync_id: expect.any(String),
+        run_id: "attempt-one",
+        decision_id: "D01",
+        expected_revision: 1,
+        draft: expect.objectContaining({ option_id: "B", owner: "CPO" }),
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Review decision/ }));
+    expect(emit).toHaveBeenCalledWith(
+      "review_decision",
+      expect.objectContaining({
+        run_id: "attempt-one",
+        decision_id: "D01",
+        expected_revision: 1,
+        draft: expect.objectContaining({ option_id: "B", owner: "CPO" }),
+      }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Run centre" }));
+    expect(emit).toHaveBeenCalledWith(
+      "navigate",
+      expect.objectContaining({
+        view: "centre",
+        run_id: "attempt-one",
+        decision_id: "D01",
+        expected_revision: 1,
+        draft: expect.objectContaining({ option_id: "B", owner: "CPO" }),
+      }),
+    );
   });
 
   it("renders a consequence boundary after permanent commitment", () => {

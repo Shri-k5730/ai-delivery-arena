@@ -5,6 +5,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 try:
@@ -50,6 +51,14 @@ class ReactHostedFlowTestCase(unittest.TestCase):
                 dispatch_event(st, configured, {"type": "start_run", "payload": {}})
 
                 run_id = str(st.session_state["arena_run_id"])
+                service = st.session_state["_arena_service"]
+                with patch.object(
+                    service.store,
+                    "load_with_draft",
+                    side_effect=AssertionError("cached decision should not reload"),
+                ):
+                    cached_model = build_model(st, configured)
+                self.assertEqual("D01", cached_model["run"]["current_decision"]["id"])
                 draft = {
                     "option_id": "B",
                     "rationale": (

@@ -21,7 +21,7 @@ from .app import (
 )
 
 
-PRODUCT_VERSION = "0.3.2"
+PRODUCT_VERSION = "0.4.0"
 VALID_VIEWS = {
     "centre",
     "briefing",
@@ -155,12 +155,37 @@ def build_model(st: Any, settings: HostedSettings) -> dict[str, Any]:
         }
         return model
 
-    run = service.get_run(str(run_id))
+    run = _cached_run(st.session_state, str(run_id))
+    loaded_draft: dict[str, Any] | None = None
+    if run is None and view == "decision":
+        run, loaded_draft = service.get_run_and_draft(str(run_id))
+    elif run is None:
+        run = service.get_run(str(run_id))
+    _cache_run(st.session_state, run)
     model["run"] = run
-    model["stages"] = service.bootstrap()["stages"]
+    model["stages"] = service.stages()
 
     if view == "decision":
-        draft = service.load_draft(str(run_id)) or {}
+        decision = run.get("current_decision")
+        if not isinstance(decision, dict):
+            raise ExperienceError("The current decision could not be resolved.")
+        draft = _cached_draft(
+            st.session_state,
+            str(run_id),
+            str(decision["id"]),
+            int(run["revision"]),
+        )
+        if draft is None:
+            if loaded_draft is None:
+                loaded_draft = service.load_draft(str(run_id))
+            draft = _normalize_draft(loaded_draft or {})
+            _cache_draft(
+                st.session_state,
+                str(run_id),
+                str(decision["id"]),
+                int(run["revision"]),
+                draft,
+            )
         model["draft"] = _normalize_draft(draft)
         sync = st.session_state.get("arena_sync")
         model["sync"] = dict(sync) if isinstance(sync, dict) else None
@@ -169,7 +194,16 @@ def build_model(st: Any, settings: HostedSettings) -> dict[str, Any]:
     if view == "review":
         draft = st.session_state.get("arena_review_payload")
         if not isinstance(draft, dict):
-            draft = service.load_draft(str(run_id))
+            decision = run.get("current_decision")
+            if isinstance(decision, dict):
+                draft = _cached_draft(
+                    st.session_state,
+                    str(run_id),
+                    str(decision["id"]),
+                    int(run["revision"]),
+                )
+            if not isinstance(draft, dict):
+                draft = service.load_draft(str(run_id))
         if not isinstance(draft, dict):
             st.session_state["arena_view"] = "decision"
             model["screen"] = "decision"
@@ -271,6 +305,56 @@ def _clear_run_ui_state(state: Any) -> None:
         state.pop(key, None)
 
 
+def _cached_run(state: Any, run_id: str) -> dict[str, Any] | None:
+    value = state.get("arena_cached_run")
+    if isinstance(value, dict) and str(value.get("run_id")) == run_id:
+        return dict(value)
+    return None
+
+
+def _cache_run(state: Any, run: dict[str, Any]) -> None:
+    state["arena_cached_run"] = dict(run)
+
+
+def _cached_draft(
+    state: Any,
+    run_id: str,
+    decision_id: str,
+    revision: int,
+) -> dict[str, Any] | None:
+    value = state.get("arena_cached_draft")
+    if not isinstance(value, dict):
+        return None
+    if (
+        str(value.get("run_id")) != run_id
+        or str(value.get("decision_id")) != decision_id
+        or int(value.get("revision", -1)) != revision
+        or not isinstance(value.get("draft"), dict)
+    ):
+        return None
+    return _normalize_draft(value["draft"])
+
+
+def _cache_draft(
+    state: Any,
+    run_id: str,
+    decision_id: str,
+    revision: int,
+    draft: dict[str, Any],
+) -> None:
+    state["arena_cached_draft"] = {
+        "run_id": run_id,
+        "decision_id": decision_id,
+        "revision": revision,
+        "draft": _normalize_draft(draft),
+    }
+
+
+def _clear_persistence_cache(state: Any) -> None:
+    state.pop("arena_cached_run", None)
+    state.pop("arena_cached_draft", None)
+
+
 def _sign_in(
     st: Any,
     settings: HostedSettings,
@@ -344,10 +428,26 @@ def _navigate(
     view = _require_text(payload, "view")
     run_id_value = payload.get("run_id")
     run_id = str(run_id_value) if run_id_value else None
+    if isinstance(payload.get("draft"), dict):
+        _save_draft(st, service, payload)
     if view in {"decision", "review", "consequence", "debrief"}:
         if not run_id:
             raise ExperienceError("Select a run before opening this view.")
-        run = service.get_run(run_id)
+        run = _cached_run(st.session_state, run_id)
+        if run is None and view == "decision":
+            run, draft = service.get_run_and_draft(run_id)
+            decision = run.get("current_decision")
+            if isinstance(decision, dict):
+                _cache_draft(
+                    st.session_state,
+                    run_id,
+                    str(decision["id"]),
+                    int(run["revision"]),
+                    draft or _empty_draft(),
+                )
+        elif run is None:
+            run = service.get_run(run_id)
+        _cache_run(st.session_state, run)
         if view == "debrief" and run["status"] != "completed":
             raise ExperienceError("Finish all 20 decisions before opening the debrief.")
         if view == "decision" and run["status"] == "completed":
@@ -367,8 +467,18 @@ def _start_run(st: Any, service: ArenaService) -> None:
             f"First attempt · {datetime.now(UTC).strftime('%d %b %Y')}",
         )
     )
-    service.start_run(run_id, display_name=display_name)
+    run = service.start_run(run_id, display_name=display_name)
     _clear_run_ui_state(st.session_state)
+    _cache_run(st.session_state, run)
+    decision = run.get("current_decision")
+    if isinstance(decision, dict):
+        _cache_draft(
+            st.session_state,
+            run_id,
+            str(decision["id"]),
+            int(run["revision"]),
+            _empty_draft(),
+        )
     _set_view(st.session_state, "decision", run_id=run_id)
 
 
@@ -387,10 +497,19 @@ def _save_draft(
         draft,
         expected_revision=expected_revision,
     )
+    _cache_draft(
+        st.session_state,
+        run_id,
+        decision_id,
+        expected_revision,
+        draft,
+    )
+    sync_id = str(payload.get("sync_id") or "")[:100]
     st.session_state["arena_sync"] = {
         "run_id": run_id,
         "decision_id": decision_id,
         "revision": expected_revision,
+        "sync_id": sync_id,
         "saved_at": datetime.now(UTC).isoformat(),
     }
 
@@ -403,15 +522,11 @@ def _request_evidence(
     run_id = _require_text(payload, "run_id")
     evidence_id = _require_text(payload, "evidence_id")
     expected_revision = int(payload.get("expected_revision"))
-    run = service.get_run(run_id)
+    run = _cached_run(st.session_state, run_id)
+    if run is None:
+        run = service.get_run(run_id)
     decision_id = str(run["current_decision"]["id"])
     draft = _normalize_draft(payload.get("draft"))
-    service.save_draft(
-        run_id,
-        decision_id,
-        draft,
-        expected_revision=expected_revision,
-    )
     updated = service.request_evidence(
         run_id,
         evidence_id,
@@ -423,6 +538,21 @@ def _request_evidence(
         draft,
         expected_revision=int(updated["revision"]),
     )
+    _cache_run(st.session_state, updated)
+    _cache_draft(
+        st.session_state,
+        run_id,
+        str(updated["current_decision"]["id"]),
+        int(updated["revision"]),
+        draft,
+    )
+    st.session_state["arena_sync"] = {
+        "run_id": run_id,
+        "decision_id": str(updated["current_decision"]["id"]),
+        "revision": int(updated["revision"]),
+        "sync_id": str(payload.get("sync_id") or "")[:100],
+        "saved_at": datetime.now(UTC).isoformat(),
+    }
     item = next(
         item for item in updated["evidence"] if item["id"] == evidence_id
     )
@@ -442,8 +572,13 @@ def _review(
     payload: dict[str, Any],
 ) -> None:
     run_id = _require_text(payload, "run_id")
-    run = service.get_run(run_id)
-    decision_id = str(run["current_decision"]["id"])
+    run = _cached_run(st.session_state, run_id)
+    if run is None:
+        run = service.get_run(run_id)
+    decision_id = str(payload.get("decision_id") or run["current_decision"]["id"])
+    expected_revision = int(payload.get("expected_revision", run["revision"]))
+    if decision_id != str(run["current_decision"]["id"]):
+        raise ExperienceError("The decision changed before review.")
     draft = _normalize_draft(payload.get("draft"))
     errors = _draft_errors(draft)
     if errors:
@@ -452,7 +587,14 @@ def _review(
         run_id,
         decision_id,
         draft,
-        expected_revision=int(run["revision"]),
+        expected_revision=expected_revision,
+    )
+    _cache_draft(
+        st.session_state,
+        run_id,
+        decision_id,
+        expected_revision,
+        draft,
     )
     st.session_state["arena_review_payload"] = draft
     _set_view(st.session_state, "review", run_id=run_id)
@@ -462,7 +604,9 @@ def _commit(st: Any, service: ArenaService, payload: dict[str, Any]) -> None:
     if payload.get("confirmed") is not True:
         raise ExperienceError("Confirm that permanent commitment is understood.")
     run_id = _require_text(payload, "run_id")
-    run = service.get_run(run_id)
+    run = _cached_run(st.session_state, run_id)
+    if run is None:
+        run = service.get_run(run_id)
     decision = run["current_decision"]
     draft = st.session_state.get("arena_review_payload")
     if not isinstance(draft, dict):
@@ -498,6 +642,7 @@ def _commit(st: Any, service: ArenaService, payload: dict[str, Any]) -> None:
         },
         expected_revision=int(run["revision"]),
     )
+    _cache_run(st.session_state, updated)
     after_available = {
         item["id"]
         for item in updated["evidence"]
@@ -522,6 +667,7 @@ def _commit(st: Any, service: ArenaService, payload: dict[str, Any]) -> None:
     }
     st.session_state.pop("arena_review_payload", None)
     st.session_state.pop("arena_sync", None)
+    st.session_state.pop("arena_cached_draft", None)
     _set_view(st.session_state, "consequence", run_id=run_id)
 
 
@@ -531,7 +677,10 @@ def _continue_after_consequence(
     payload: dict[str, Any],
 ) -> None:
     run_id = _require_text(payload, "run_id")
-    run = service.get_run(run_id)
+    run = _cached_run(st.session_state, run_id)
+    if run is None:
+        run = service.get_run(run_id)
+        _cache_run(st.session_state, run)
     st.session_state.pop("arena_consequence", None)
     _set_view(
         st.session_state,
@@ -590,6 +739,11 @@ def dispatch_event(
         st.session_state["arena_view"] = "centre"
         return
     if action == "sign_out":
+        if (
+            _authenticated(st.session_state)
+            and isinstance(payload.get("draft"), dict)
+        ):
+            _save_draft(st, _service(st, settings), payload)
         _sign_out(st)
         return
 
@@ -694,6 +848,7 @@ def main() -> None:
     try:
         dispatch_event(st, settings, event)
     except (ExperienceError, PersistenceError, ValueError, TypeError) as exc:
+        _clear_persistence_cache(st.session_state)
         kind = "error"
         message = str(exc)
         if str(event.get("type", "")) in {"sign_in", "sign_up"}:
@@ -706,6 +861,7 @@ def main() -> None:
                 )
         _notice(st.session_state, message, kind=kind)
     except Exception:
+        _clear_persistence_cache(st.session_state)
         _notice(
             st.session_state,
             "The action could not be completed. Refresh and try again.",

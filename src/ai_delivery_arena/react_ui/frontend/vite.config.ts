@@ -21,11 +21,11 @@ export default defineConfig(({ command }) => ({
     lib: {
       entry: "./src/index.tsx",
       formats: ["es"],
-      fileName: "index-[hash]",
+      fileName: "index",
     },
     rollupOptions: {
       output: {
-        assetFileNames: "index-[hash][extname]",
+        assetFileNames: "index[extname]",
       },
     },
   },

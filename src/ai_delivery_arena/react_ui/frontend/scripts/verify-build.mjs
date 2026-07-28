@@ -3,15 +3,19 @@ import { join } from "node:path";
 
 const buildDirectory = new URL("../build/", import.meta.url);
 const files = await readdir(buildDirectory);
-const scriptFiles = files.filter((name) => name.endsWith(".js"));
+const expectedFiles = ["index.css", "index.js"];
+const unexpectedFiles = files.filter((name) => !expectedFiles.includes(name));
 
-if (scriptFiles.length !== 1) {
+if (
+  !expectedFiles.every((name) => files.includes(name)) ||
+  unexpectedFiles.length > 0
+) {
   throw new Error(
-    `Expected one compiled JavaScript asset, found ${scriptFiles.length}.`,
+    `Expected only ${expectedFiles.join(", ")}; found ${files.join(", ")}.`,
   );
 }
 
-const bundle = await readFile(join(buildDirectory.pathname, scriptFiles[0]), "utf8");
+const bundle = await readFile(join(buildDirectory.pathname, "index.js"), "utf8");
 if (bundle.includes("process.env.NODE_ENV")) {
   throw new Error(
     "The browser bundle still contains process.env.NODE_ENV and will fail inside Streamlit.",

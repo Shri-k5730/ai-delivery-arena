@@ -1,4 +1,4 @@
-# Hosted Beta v0.3
+# Hosted Beta v0.4
 
 AI Delivery Arena Hosted Beta uses one public Streamlit application and one
 Supabase project. The deterministic engine, scenario fixtures, scoring rules,
@@ -118,8 +118,33 @@ npm run build
 
 Commit both the source changes and the regenerated files under `build/`. The
 production bundle is mounted through Streamlit Components v2 without an iframe.
-The Python package loads exactly one generated JavaScript file and one generated
-CSS file, and fails closed if the build is missing or ambiguous.
+The production build uses stable `index.js` and `index.css` filenames. The
+Python loader prefers those exact files and retains a legacy fallback for one
+older hashed bundle. This prevents an archive overlay from making a deployment
+ambiguous when an obsolete hashed asset remains on disk.
+
+## Draft persistence and request budget
+
+The browser writes the active decision draft to user-scoped `localStorage` on
+every change. That local buffer:
+
+- restores unsynchronized text after a refresh in the same browser;
+- is namespaced by user, run, decision, and run revision;
+- never contains hidden engine state, scores, rule identifiers, or secrets; and
+- is superseded by the cloud draft after a confirmed synchronization.
+
+Cloud autosave waits for ten seconds of inactivity. Review, evidence ordering,
+Run Centre navigation, and sign-out carry the latest draft immediately instead
+of waiting for the timer. A normal cloud draft sync is one conditional
+`UPDATE`, guarded by owner, run ID, revision, status, and decision count. The
+active run is cached only in the current Streamlit session, and a cold resume
+loads the encrypted run plus its draft in one Supabase query.
+
+The status text distinguishes:
+
+- **Saved on this device:** immediately recoverable in this browser;
+- **Syncing to cloud:** a conditional Supabase write is in flight; and
+- **Cloud synchronized:** the current draft is stored for cross-device resume.
 
 ## 4. Validate the hosted boundary
 
@@ -186,6 +211,6 @@ Streamlit storage, so hibernation or redeployment does not lose committed runs.
 
 ## Release boundary
 
-Hosted Beta v0.3 is appropriate for product learning and a controlled public
+Hosted Beta v0.4 is appropriate for product learning and a controlled canary
 beta. It is not positioned as a production-grade assessment service, a hiring
 decision system, certification, or independently calibrated benchmark.

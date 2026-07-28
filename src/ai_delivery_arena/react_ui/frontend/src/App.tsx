@@ -91,6 +91,12 @@ type SeenActivity = {
   evidenceIds: string[];
 };
 
+type BufferedDraft = {
+  draft: Draft;
+  updatedAt: string;
+  synced: string | null;
+};
+
 type Emit = (type: string, payload?: Record<string, unknown>) => void;
 
 const EMPTY_DRAFT: Draft = {
@@ -123,6 +129,105 @@ function dateLabel(value: string): string {
 function activityStorageKey(data: ArenaModel, runId: string): string {
   const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
   return `ai-delivery-arena:seen-activity:${owner}:${runId}`;
+}
+
+function draftStorageKey(
+  data: ArenaModel,
+  runId: string,
+  decisionId: string,
+  revision: number,
+): string {
+  const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
+  return `ai-delivery-arena:draft:${owner}:${runId}:${decisionId}:${revision}`;
+}
+
+function serializeDraft(draft: Draft): string {
+  return JSON.stringify({
+    acceptance_condition: draft.acceptance_condition,
+    assumptions: draft.assumptions,
+    evidence_refs: [...draft.evidence_refs],
+    option_id: draft.option_id,
+    owner: draft.owner,
+    rationale: draft.rationale,
+    risk: draft.risk,
+    terminal_route: draft.terminal_route,
+  });
+}
+
+function isDraft(value: unknown): value is Draft {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    (candidate.option_id === null || typeof candidate.option_id === "string") &&
+    typeof candidate.rationale === "string" &&
+    typeof candidate.assumptions === "string" &&
+    typeof candidate.owner === "string" &&
+    typeof candidate.acceptance_condition === "string" &&
+    typeof candidate.risk === "string" &&
+    Array.isArray(candidate.evidence_refs) &&
+    candidate.evidence_refs.every((item) => typeof item === "string") &&
+    typeof candidate.terminal_route === "string"
+  );
+}
+
+function readBufferedDraft(key: string, serverDraft: Draft): BufferedDraft {
+  const fallback: BufferedDraft = {
+    draft: serverDraft,
+    updatedAt: new Date(0).toISOString(),
+    synced: serializeDraft(serverDraft),
+  };
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(key) ?? "null");
+    if (!stored || typeof stored !== "object" || !isDraft(stored.draft)) {
+      return fallback;
+    }
+    const serialized = serializeDraft(stored.draft);
+    if (stored.synced === serialized) {
+      return fallback;
+    }
+    return {
+      draft: stored.draft,
+      updatedAt:
+        typeof stored.updatedAt === "string"
+          ? stored.updatedAt
+          : new Date().toISOString(),
+      synced: typeof stored.synced === "string" ? stored.synced : null,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeBufferedDraft(
+  key: string,
+  draft: Draft,
+  synced?: string | null,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const previous = JSON.parse(window.localStorage.getItem(key) ?? "null");
+    const record: BufferedDraft = {
+      draft,
+      updatedAt: new Date().toISOString(),
+      synced:
+        synced !== undefined
+          ? synced
+          : typeof previous?.synced === "string"
+            ? previous.synced
+            : null,
+    };
+    window.localStorage.setItem(key, JSON.stringify(record));
+  } catch {
+    // The cloud debounce still works when browser storage is unavailable.
+  }
+}
+
+function nextSyncId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `sync-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function readSeenActivity(key: string): SeenActivity {
@@ -1013,14 +1118,40 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const run = data.run ?? {};
   const decision = run.current_decision ?? {};
   const decisionKey = `${run.run_id}:${decision.id}`;
-  const [draft, setDraft] = useState<Draft>(data.draft ?? EMPTY_DRAFT);
+  const draftKey = useMemo(
+    () =>
+      draftStorageKey(
+        data,
+        String(run.run_id),
+        String(decision.id),
+        Number(run.revision),
+      ),
+    [
+      data.local_mode,
+      data.user?.id,
+      decision.id,
+      run.revision,
+      run.run_id,
+    ],
+  );
+  const initialBuffer = useMemo(
+    () => readBufferedDraft(draftKey, data.draft ?? EMPTY_DRAFT),
+    [decisionKey, draftKey],
+  );
+  const [draft, setDraft] = useState<Draft>(initialBuffer.draft);
   const [contextTab, setContextTab] = useState<"evidence" | "signals" | "record">("evidence");
   const [evidenceFilter, setEvidenceFilter] = useState("all");
   const [evidenceSearch, setEvidenceSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
-  const [syncLabel, setSyncLabel] = useState("Draft synchronized");
+  const [syncLabel, setSyncLabel] = useState(
+    initialBuffer.synced === serializeDraft(initialBuffer.draft)
+      ? "Cloud synchronized"
+      : "Recovered on this device",
+  );
   const [issues, setIssues] = useState<string[]>([]);
-  const lastSent = useRef(JSON.stringify(data.draft ?? EMPTY_DRAFT));
+  const [syncRetry, setSyncRetry] = useState(0);
+  const lastSynced = useRef(serializeDraft(data.draft ?? EMPTY_DRAFT));
+  const inFlight = useRef<{ id: string; serialized: string } | null>(null);
   const initialized = useRef(decisionKey);
   const activityKey = useMemo(
     () => activityStorageKey(data, String(run.run_id)),
@@ -1033,42 +1164,91 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
   useEffect(() => {
     if (initialized.current !== decisionKey) {
       initialized.current = decisionKey;
-      const next = data.draft ?? EMPTY_DRAFT;
-      setDraft(next);
-      lastSent.current = JSON.stringify(next);
+      const serverDraft = data.draft ?? EMPTY_DRAFT;
+      const buffered = readBufferedDraft(draftKey, serverDraft);
+      setDraft(buffered.draft);
+      lastSynced.current = serializeDraft(serverDraft);
+      inFlight.current = null;
+      setSyncLabel(
+        buffered.synced === serializeDraft(buffered.draft)
+          ? "Cloud synchronized"
+          : "Recovered on this device",
+      );
       setIssues([]);
       setBusy(null);
     }
-  }, [decisionKey, data.draft]);
+  }, [decisionKey, data.draft, draftKey]);
 
   useEffect(() => {
     setSeenActivity(readSeenActivity(activityKey));
   }, [activityKey]);
 
   useEffect(() => {
-    if (data.notice || data.sync) setBusy(null);
-    if (data.sync?.decision_id === decision.id) {
-      lastSent.current = JSON.stringify(draft);
-      setSyncLabel("Draft saved");
+    if (data.notice || data.sync) {
+      setBusy(null);
     }
-  }, [data.notice, data.sync?.saved_at]);
+    const pending = inFlight.current;
+    if (
+      pending &&
+      data.sync?.decision_id === decision.id &&
+      data.sync?.sync_id === pending.id
+    ) {
+      lastSynced.current = pending.serialized;
+      writeBufferedDraft(draftKey, draft, pending.serialized);
+      inFlight.current = null;
+      setSyncLabel(
+        serializeDraft(draft) === pending.serialized
+          ? "Cloud synchronized"
+          : "Saved on this device",
+      );
+      return;
+    }
+    if (data.notice?.kind === "error" && pending) {
+      inFlight.current = null;
+      setSyncLabel("Saved on this device · retry pending");
+      setSyncRetry((value) => value + 1);
+    }
+  }, [
+    data.notice,
+    data.sync?.saved_at,
+    data.sync?.sync_id,
+    decision.id,
+    draft,
+    draftKey,
+  ]);
 
   useEffect(() => {
-    const serialized = JSON.stringify(draft);
-    if (serialized === lastSent.current) return;
-    setSyncLabel("Unsaved changes");
+    const serialized = serializeDraft(draft);
+    if (serialized === lastSynced.current) {
+      writeBufferedDraft(draftKey, draft, serialized);
+      setSyncLabel("Cloud synchronized");
+      return;
+    }
+    writeBufferedDraft(draftKey, draft);
+    setSyncLabel("Saved on this device");
     const timer = window.setTimeout(() => {
-      lastSent.current = serialized;
-      setSyncLabel("Saving…");
+      if (inFlight.current?.serialized === serialized) return;
+      const syncId = nextSyncId();
+      inFlight.current = { id: syncId, serialized };
+      setSyncLabel("Syncing to cloud…");
       emit("save_draft", {
         run_id: run.run_id,
         decision_id: decision.id,
         expected_revision: run.revision,
+        sync_id: syncId,
         draft,
       });
-    }, 1200);
+    }, 10_000);
     return () => window.clearTimeout(timer);
-  }, [draft, decision.id, emit, run.revision, run.run_id]);
+  }, [
+    draft,
+    draftKey,
+    decision.id,
+    emit,
+    run.revision,
+    run.run_id,
+    syncRetry,
+  ]);
 
   const availableEvidence: JsonMap[] = (run.evidence ?? []).filter((item: JsonMap) =>
     ["available", "verified"].includes(item.state),
@@ -1107,6 +1287,35 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const update = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setDraft((current) => ({ ...current, [key]: value }));
 
+  const persistencePayload = () => ({
+    run_id: run.run_id,
+    decision_id: decision.id,
+    expected_revision: run.revision,
+    draft,
+  });
+
+  const emitFromCockpit: Emit = (type, payload = {}) => {
+    if (type === "navigate" || type === "sign_out") {
+      setSyncLabel("Syncing before exit…");
+      emit(type, { ...payload, ...persistencePayload() });
+      return;
+    }
+    emit(type, payload);
+  };
+
+  const requestEvidence = (evidenceId: string) => {
+    const serialized = serializeDraft(draft);
+    const syncId = nextSyncId();
+    inFlight.current = { id: syncId, serialized };
+    setBusy(`evidence:${evidenceId}`);
+    setSyncLabel("Syncing to cloud…");
+    emit("request_evidence", {
+      evidence_id: evidenceId,
+      sync_id: syncId,
+      ...persistencePayload(),
+    });
+  };
+
   const openContext = (tab: "evidence" | "signals" | "record") => {
     setContextTab(tab);
     if (tab === "record") return;
@@ -1141,16 +1350,23 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
     }
     setBusy("review");
     emit("review_decision", {
-      run_id: run.run_id,
-      draft,
+      ...persistencePayload(),
     });
   };
 
   return (
-    <AppShell data={data} emit={emit} compact>
+    <AppShell data={data} emit={emitFromCockpit} compact>
       <main className="cockpit">
         <section className="cockpit-topbar">
-          <button type="button" onClick={() => emit("navigate", { view: "centre" })}>
+          <button
+            type="button"
+            onClick={() =>
+              emitFromCockpit("navigate", {
+                view: "centre",
+                run_id: run.run_id,
+              })
+            }
+          >
             <ArrowLeft size={15} /> Run centre
           </button>
           <StageRail stages={data.stages ?? []} run={run} />
@@ -1417,15 +1633,7 @@ function DecisionCockpit({ data, emit }: { data: ArenaModel; emit: Emit }) {
                       arrived={arrivedEvidenceIds.has(item.id)}
                       credits={run.credits?.remaining}
                       busy={busy === `evidence:${item.id}`}
-                      onRequest={() => {
-                        setBusy(`evidence:${item.id}`);
-                        emit("request_evidence", {
-                          run_id: run.run_id,
-                          evidence_id: item.id,
-                          expected_revision: run.revision,
-                          draft,
-                        });
-                      }}
+                      onRequest={() => requestEvidence(item.id)}
                     />
                   ))}
                 </div>

@@ -68,6 +68,7 @@ class FakeQuery:
         return self
 
     def execute(self) -> FakeResponse:
+        self.database.request_count += 1
         if self.action == "insert":
             assert self.payload is not None
             if any(
@@ -110,6 +111,7 @@ class FakeQuery:
 class FakeSupabase:
     def __init__(self):
         self.rows: list[dict[str, Any]] = []
+        self.request_count = 0
 
     def table(self, name: str) -> FakeQuery:
         if name != "arena_runs":
@@ -162,7 +164,9 @@ class CloudPersistenceTestCase(unittest.TestCase):
             draft,
             expected_revision=int(view["revision"]),
         )
+        before_load = self.database.request_count
         self.assertEqual(draft, self.service.load_draft("cloud-draft"))
+        self.assertEqual(1, self.database.request_count - before_load)
         with self.assertRaises(RevisionConflictError):
             self.service.save_draft(
                 "cloud-draft",
@@ -170,6 +174,28 @@ class CloudPersistenceTestCase(unittest.TestCase):
                 draft,
                 expected_revision=99,
             )
+
+    def test_normal_cloud_draft_save_is_one_conditional_request(self) -> None:
+        view = self.service.start_run("single-request-draft")
+        draft = {
+            "option_id": "B",
+            "rationale": "A buffered draft that is ready for one cloud write.",
+            "assumptions": "The current revision remains active.",
+            "owner": "CPO",
+            "acceptance_condition": "Stop when the threshold is missed.",
+            "risk": "Another browser may advance the run.",
+            "evidence_refs": [],
+            "terminal_route": "conditional_release",
+        }
+        before = self.database.request_count
+        self.service.save_draft(
+            "single-request-draft",
+            "D01",
+            draft,
+            expected_revision=int(view["revision"]),
+        )
+        self.assertEqual(1, self.database.request_count - before)
+        self.assertEqual(draft, self.database.rows[0]["draft_payload"])
 
     def test_other_owner_cannot_resolve_run_through_store_scope(self) -> None:
         self.service.start_run("private-cloud")

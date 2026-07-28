@@ -117,6 +117,11 @@ class RunStore(Protocol):
 
     def load(self, run_id: str) -> RestoredRun: ...
 
+    def load_with_draft(
+        self,
+        run_id: str,
+    ) -> tuple[RestoredRun, dict[str, Any] | None]: ...
+
     def list_runs(self) -> tuple[RunSummary, ...]: ...
 
     def set_display_name(self, run_id: str, display_name: str) -> None: ...
@@ -365,10 +370,17 @@ class JsonRunStore:
         )
 
     def load_draft(self, run_id: str) -> dict[str, Any] | None:
+        _, draft = self.load_with_draft(run_id)
+        return draft
+
+    def load_with_draft(
+        self,
+        run_id: str,
+    ) -> tuple[RestoredRun, dict[str, Any] | None]:
         restored = self.load(run_id)
         path = self._draft_path(run_id)
         if not path.exists() or restored.result.status.value == "completed":
-            return None
+            return restored, None
         document = _read_json_object(path)
         expected_decision = self.engine.bundle.scenario.decisions[
             len(restored.run_input.decisions)
@@ -379,8 +391,8 @@ class JsonRunStore:
             or document.get("revision") != restored.revision
             or not isinstance(document.get("draft"), dict)
         ):
-            return None
-        return dict(document["draft"])
+            return restored, None
+        return restored, dict(document["draft"])
 
     def delete_draft(self, run_id: str) -> None:
         path = self._draft_path(run_id)

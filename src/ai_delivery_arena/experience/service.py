@@ -203,21 +203,26 @@ class ArenaService:
                     "commercial authority remains unresolved."
                 ),
             },
-            "stages": [
-                {
-                    "id": stage.id,
-                    **_STAGE_COPY[stage.id],
-                    "decision_ids": list(stage.decision_ids),
-                    "nominal_weeks": list(stage.nominal_weeks),
-                }
-                for stage in scenario.stages
-            ],
+            "stages": self.stages(),
             "runs": self.list_runs(),
             "notice": (
                 "First attempts are scored only after submission. No live competency "
                 "score, preferred option, or hidden program health is shown."
             ),
         }
+
+    def stages(self) -> list[dict[str, object]]:
+        """Return static participant-safe stage metadata without touching storage."""
+
+        return [
+            {
+                "id": stage.id,
+                **_STAGE_COPY[stage.id],
+                "decision_ids": list(stage.decision_ids),
+                "nominal_weeks": list(stage.nominal_weeks),
+            }
+            for stage in self.bundle.scenario.stages
+        ]
 
     def list_runs(self) -> list[dict[str, object]]:
         return [item.as_dict() for item in self.store.list_runs()]
@@ -252,6 +257,19 @@ class ArenaService:
             except RunNotFoundError as exc:
                 raise ExperienceError(f"run not found: {run_id}") from exc
             return self._run_view(restored)
+
+    def get_run_and_draft(
+        self,
+        run_id: str,
+    ) -> tuple[dict[str, object], dict[str, Any] | None]:
+        """Load a resumable run and its draft through one storage read."""
+
+        with self._lock:
+            try:
+                restored, draft = self.store.load_with_draft(run_id)
+            except RunNotFoundError as exc:
+                raise ExperienceError(f"run not found: {run_id}") from exc
+            return self._run_view(restored), draft
 
     def request_evidence(
         self,

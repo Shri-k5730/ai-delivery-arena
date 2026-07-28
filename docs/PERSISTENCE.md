@@ -83,6 +83,23 @@ python scripts/checkpoint_reference_run.py \
 
 The default local store is `.arena-runs/`, which is excluded from Git.
 
+## Hosted draft buffering
+
+The hosted React cockpit separates fast local recovery from durable cloud
+persistence:
+
+1. every draft change is written immediately to browser storage;
+2. cloud synchronization is batched after ten seconds of inactivity;
+3. review, evidence ordering, navigation, and sign-out carry the latest draft;
+4. the Supabase draft update is one compare-and-swap request; and
+5. a failed cloud write leaves the browser buffer intact for retry.
+
+The cloud update matches `owner_id`, `run_id`, `revision`, `status`, and the
+decision's expected zero-based position. A stale tab therefore cannot save a
+draft against a newer committed revision. Browser keys include the authenticated
+owner, run, decision, and revision so drafts do not cross account or decision
+boundaries on the same device.
+
 ## Deployment boundary
 
 The JSON store is intentionally a local, single-writer adapter. Atomic replacement

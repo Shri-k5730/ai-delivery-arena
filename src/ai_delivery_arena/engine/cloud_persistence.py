@@ -190,7 +190,43 @@ class SupabaseRunStore:
         rows = self._select("run_id,save_payload", run_id=run_id)
         if not rows:
             raise RunNotFoundError(f"run save does not exist: {run_id}")
-        payload = rows[0].get("save_payload")
+        return self._restore_row(run_id, rows[0])
+
+    def load_with_draft(
+        self,
+        run_id: str,
+    ) -> tuple[RestoredRun, dict[str, Any] | None]:
+        rows = self._select(
+            (
+                "run_id,save_payload,draft_decision_id,draft_revision,"
+                "draft_payload"
+            ),
+            run_id=run_id,
+        )
+        if not rows:
+            raise RunNotFoundError(f"run save does not exist: {run_id}")
+        row = rows[0]
+        restored = self._restore_row(run_id, row)
+        if restored.result.status.value == "completed":
+            return restored, None
+        expected_decision = self.engine.bundle.scenario.decisions[
+            len(restored.run_input.decisions)
+        ].id
+        payload = row.get("draft_payload")
+        if (
+            row.get("draft_decision_id") != expected_decision
+            or row.get("draft_revision") != restored.revision
+            or not isinstance(payload, dict)
+        ):
+            return restored, None
+        return restored, dict(payload)
+
+    def _restore_row(
+        self,
+        run_id: str,
+        row: dict[str, Any],
+    ) -> RestoredRun:
+        payload = row.get("save_payload")
         if not isinstance(payload, str):
             raise SupabasePersistenceError(
                 f"{run_id}: cloud save payload is not encrypted text"
@@ -223,22 +259,16 @@ class SupabaseRunStore:
         *,
         expected_revision: int,
     ) -> None:
-        restored = self.load(run_id)
-        if restored.revision != expected_revision:
-            raise RevisionConflictError(
-                f"{run_id}: expected revision {expected_revision}; "
-                f"current revision is {restored.revision}"
-            )
-        if restored.result.status.value == "completed":
-            raise CompletedRunError(f"{run_id}: a completed run has no mutable draft")
-        expected_decision = self.engine.bundle.scenario.decisions[
-            len(restored.run_input.decisions)
-        ].id
-        if decision_id != expected_decision:
-            raise PersistenceError(
-                f"{run_id}: draft targets {decision_id}; next decision is "
-                f"{expected_decision}"
-            )
+        decision_index = next(
+            (
+                index
+                for index, item in enumerate(self.engine.bundle.scenario.decisions)
+                if item.id == decision_id
+            ),
+            None,
+        )
+        if decision_index is None:
+            raise PersistenceError(f"{run_id}: unknown draft decision {decision_id}")
         rows = self._execute(
             self.client.table(self.table_name)
             .update(
@@ -252,34 +282,17 @@ class SupabaseRunStore:
             .eq("owner_id", self.owner_id)
             .eq("run_id", run_id)
             .eq("revision", expected_revision)
+            .eq("status", "in_progress")
+            .eq("decision_count", decision_index)
         )
         if not rows:
             raise RevisionConflictError(
-                f"{run_id}: the cloud revision changed before the draft save"
+                f"{run_id}: the run changed before the draft save"
             )
 
     def load_draft(self, run_id: str) -> dict[str, Any] | None:
-        restored = self.load(run_id)
-        if restored.result.status.value == "completed":
-            return None
-        rows = self._select(
-            "draft_decision_id,draft_revision,draft_payload",
-            run_id=run_id,
-        )
-        if not rows:
-            return None
-        row = rows[0]
-        expected_decision = self.engine.bundle.scenario.decisions[
-            len(restored.run_input.decisions)
-        ].id
-        payload = row.get("draft_payload")
-        if (
-            row.get("draft_decision_id") != expected_decision
-            or row.get("draft_revision") != restored.revision
-            or not isinstance(payload, dict)
-        ):
-            return None
-        return dict(payload)
+        _, draft = self.load_with_draft(run_id)
+        return draft
 
     def delete_draft(self, run_id: str) -> None:
         self._execute(
