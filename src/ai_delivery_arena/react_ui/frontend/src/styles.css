@@ -1353,6 +1353,12 @@ summary:focus-visible {
   cursor: pointer;
 }
 
+.run-row-actions > .run-delete-action:hover {
+  border-color: #efb2b2;
+  color: var(--red-700);
+  background: #fff7f7;
+}
+
 .rename-form {
   display: flex;
   align-items: center;
@@ -1589,6 +1595,95 @@ summary:focus-visible {
   color: var(--ink-500);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.assessment-contract-preview,
+.gate-handbook {
+  margin-top: 30px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+}
+
+.assessment-contract-preview > h3,
+.gate-handbook > h3 {
+  margin: 7px 0 8px;
+  color: var(--navy-900);
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+
+.assessment-layer-grid {
+  display: grid;
+  margin-top: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.assessment-layer-grid article {
+  padding: 14px;
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  background: var(--surface-soft);
+}
+
+.assessment-layer-grid strong {
+  color: var(--ink-800);
+  font-size: 12px;
+}
+
+.assessment-layer-grid p,
+.gate-handbook > p,
+.assessment-boundary-note {
+  margin: 6px 0 0;
+  color: var(--ink-500);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.assessment-boundary-note {
+  padding: 11px 13px;
+  border-left: 3px solid var(--amber-700);
+  background: #fff9eb;
+}
+
+.gate-handbook > div {
+  display: grid;
+  margin-top: 14px;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.gate-handbook article {
+  display: grid;
+  padding: 11px 12px;
+  grid-template-columns: 34px 1fr;
+  gap: 9px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+
+.gate-handbook article > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--blue-700);
+  background: var(--blue-50);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.gate-handbook strong {
+  color: var(--ink-800);
+  font-size: 11px;
+}
+
+.gate-handbook article p {
+  margin: 3px 0 0;
+  color: var(--ink-500);
+  font-size: 10.5px;
+  line-height: 1.45;
 }
 
 .briefing-stages {
@@ -3045,6 +3140,22 @@ summary:focus-visible {
   line-height: 1.6;
 }
 
+.debrief-heading-grid .debrief-verdict {
+  max-width: 770px;
+  color: #dce7f3;
+  font-size: 14px;
+}
+
+.debrief-heading-grid .debrief-recommendation {
+  margin-top: 9px;
+  color: #8fa3b8;
+  font-size: 11px;
+}
+
+.debrief-recommendation strong {
+  color: #b9c8d8;
+}
+
 .score-lockup {
   display: flex;
   align-items: center;
@@ -3165,6 +3276,75 @@ summary:focus-visible {
 .debrief-content {
   min-height: 520px;
   padding: 48px 0 65px;
+}
+
+.result-explainer {
+  margin-bottom: 38px;
+}
+
+.result-layer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 11px;
+}
+
+.result-layer-grid article {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.result-layer-grid article > span,
+.result-layer-grid article > strong {
+  display: block;
+}
+
+.result-layer-grid article > span {
+  color: var(--blue-700);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.result-layer-grid article > strong {
+  margin-top: 7px;
+  color: var(--navy-900);
+  font-size: 24px;
+}
+
+.result-layer-grid p {
+  margin: 9px 0 0;
+  color: var(--ink-500);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.result-layer-grid small {
+  display: block;
+  margin-top: 9px;
+  color: var(--red-700);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.assessment-disclosure {
+  display: flex;
+  margin: 10px 0 0;
+  padding: 11px 13px;
+  align-items: start;
+  gap: 8px;
+  border: 1px solid #efd69a;
+  border-radius: 8px;
+  color: #72550d;
+  background: #fff9eb;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.assessment-disclosure svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
 }
 
 .judgment-columns {
@@ -3310,6 +3490,22 @@ summary:focus-visible {
   gap: 11px;
 }
 
+.gate-counts {
+  display: flex;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.gate-counts span {
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-600);
+  background: #fff;
+  font-size: 10px;
+  font-weight: 750;
+}
+
 .gate-card {
   padding: 18px;
   border: 1px solid var(--line);
@@ -3345,17 +3541,91 @@ summary:focus-visible {
   color: var(--red-700);
 }
 
+.gate-unresolved > div span {
+  color: var(--amber-700);
+}
+
+.gate-not-applicable > div span {
+  color: var(--ink-500);
+}
+
+.gate-fail {
+  border-color: #efc3c3;
+  background: #fffafa;
+}
+
+.gate-unresolved {
+  border-color: #ecd79f;
+  background: #fffdf6;
+}
+
 .gate-card h3 {
   margin: 13px 0 6px;
   color: var(--ink-800);
   font-size: 13px;
 }
 
-.gate-card p {
-  margin: 0;
-  color: var(--ink-500);
-  font-size: 12px;
-  line-height: 1.55;
+.gate-card dl {
+  display: grid;
+  gap: 10px;
+  margin: 13px 0 0;
+}
+
+.gate-card dl > div {
+  padding-top: 9px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.gate-card dt {
+  color: var(--ink-400);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gate-card dd {
+  margin: 4px 0 0;
+  color: var(--ink-600);
+  font-size: 11px;
+  line-height: 1.52;
+}
+
+.gate-card footer {
+  display: flex;
+  margin-top: 13px;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gate-card footer span,
+.gate-card footer small {
+  font-size: 10px;
+}
+
+.gate-card footer span {
+  color: var(--ink-700);
+  font-weight: 750;
+}
+
+.gate-card footer small {
+  color: var(--ink-400);
+  text-align: right;
+}
+
+.score-cap-callout {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 9px 11px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #efc3c3;
+  border-radius: 8px;
+  color: var(--red-700);
+  background: #fff7f7;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .dimension-list {
@@ -3602,6 +3872,7 @@ summary:focus-visible {
 
 .export-inner > div:last-child {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
 }
 
@@ -3772,6 +4043,11 @@ summary:focus-visible {
 
   .briefing-stages {
     grid-template-columns: repeat(5, 1fr);
+  }
+
+  .assessment-layer-grid,
+  .result-layer-grid {
+    grid-template-columns: 1fr;
   }
 
   .cockpit-topbar {
@@ -4043,6 +4319,10 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .gate-handbook > div {
+    grid-template-columns: 1fr;
+  }
+
   .briefing-stages {
     grid-template-columns: 1fr 1fr;
   }
@@ -4177,6 +4457,15 @@ summary:focus-visible {
   .gate-grid,
   .perspective-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gate-card footer {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .gate-card footer small {
+    text-align: left;
   }
 
   .dimension-card > button {

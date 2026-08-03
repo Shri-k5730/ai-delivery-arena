@@ -13,7 +13,9 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from ai_delivery_arena.hosted.app import (  # noqa: E402
+    HostedSettings,
     _draft_errors,
+    _email_allowlist,
     _escape,
     _legacy_jwt_role,
     _signup_credentials,
@@ -28,6 +30,25 @@ def fake_jwt(role: str) -> str:
 
 
 class HostedAppTestCase(unittest.TestCase):
+    def test_private_canary_requires_normalized_invited_email(self) -> None:
+        emails = _email_allowlist("Leader@Example.com, reviewer@example.com\nleader@example.com")
+        settings = HostedSettings(
+            supabase_url="https://example.supabase.co",
+            supabase_key="public-key",
+            signing_key=b"long-test-key",
+            github_url="https://github.com/example/arena",
+            app_url="https://arena.streamlit.app",
+            canary_emails=emails,
+            feedback_url="https://example.com/feedback",
+            incident_email="incident@example.com",
+            allow_local_mode=False,
+        )
+        self.assertEqual(("leader@example.com", "reviewer@example.com"), emails)
+        self.assertTrue(settings.email_is_invited("LEADER@example.com"))
+        self.assertFalse(settings.email_is_invited("other@example.com"))
+        self.assertTrue(settings.canary_ready)
+        self.assertFalse(settings.allow_local_mode)
+
     def test_service_role_key_is_detectable_before_configuration(self) -> None:
         self.assertEqual("service_role", _legacy_jwt_role(fake_jwt("service_role")))
         self.assertEqual("anon", _legacy_jwt_role(fake_jwt("anon")))

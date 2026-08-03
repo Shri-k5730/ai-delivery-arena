@@ -212,6 +212,29 @@ class ExperienceTestCase(unittest.TestCase):
         self.assertEqual(view["history"], restored["history"])
         self.assertEqual(view["ledger"], restored["ledger"])
 
+    def test_participant_can_delete_one_local_run_and_sidecars(self) -> None:
+        view = self.service.start_run("delete-local", display_name="Delete me")
+        self.service.save_draft(
+            "delete-local",
+            "D01",
+            self.response("D01", "B", []),
+            expected_revision=int(view["revision"]),
+        )
+        self.service.delete_run("delete-local")
+        self.assertEqual([], self.service.list_runs())
+        with self.assertRaisesRegex(ExperienceError, "run not found"):
+            self.service.get_run("delete-local")
+
+    def test_debrief_separates_outcome_programme_and_competency_layers(self) -> None:
+        self.complete("unsafe-debrief", UNSAFE_OPTIONS, requests=EVIDENCE_REQUESTS[:4])
+        report = self.service.debrief("unsafe-debrief")
+        self.assertEqual("blocked", report.outcome["gate_standing"])
+        self.assertIn("Gate-blocked", report.outcome["label"])
+        self.assertIn("program_health_average", report.outcome)
+        self.assertIn("free_text_boundary", report.assessment_contract)
+        self.assertTrue(all("expected_control" in gate for gate in report.gates))
+        self.assertTrue(all("required_next_step" in gate for gate in report.gates))
+
 
 if __name__ == "__main__":
     unittest.main()

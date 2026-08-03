@@ -533,6 +533,10 @@ class ArenaService:
         with self._lock:
             self.store.set_display_name(run_id, display_name)
 
+    def delete_run(self, run_id: str) -> None:
+        with self._lock:
+            self.store.delete_run(run_id)
+
     @staticmethod
     def _required_text(
         payload: dict[str, Any],

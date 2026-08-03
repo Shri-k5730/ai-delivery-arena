@@ -13,12 +13,18 @@ const base: ArenaModel = {
   product: {
     name: "AI Delivery Arena",
     tagline: "Judgment under pressure",
-    version: "0.4.0",
-    status: "Hosted Beta",
+    version: "0.5.0",
+    status: "Private Canary",
   },
   screen: "marketing",
   configured: true,
   authenticated: false,
+  canary: {
+    admission_ready: true,
+    feedback_ready: true,
+    incident_ready: true,
+    ready: true,
+  },
   links: {
     github: "https://github.com/example/arena",
     privacy: "https://github.com/example/arena/privacy",
@@ -123,6 +129,8 @@ describe("AI Delivery Arena React product", () => {
       />,
     );
     expect(screen.getByText("How evidence and signals work")).toBeInTheDocument();
+    expect(screen.getByText("Three results. Do not confuse them.")).toBeInTheDocument();
+    expect(screen.getByText("Commercial authority")).toBeInTheDocument();
     expect(screen.getByText("Cite now")).toBeInTheDocument();
     expect(screen.getByText("Order for later")).toBeInTheDocument();
     expect(screen.getByText("Due Week X")).toBeInTheDocument();
@@ -410,8 +418,32 @@ describe("AI Delivery Arena React product", () => {
             scope_assessed: "Release only after the named control tests pass.",
             release_valid: true,
             reported_overall: 74.5,
+            raw_overall: 74.5,
             provisional_label: "Integrated",
-            gates: [{ gate_id: "G1", name: "Authority", status: "pass", reason: "Authority stayed human." }],
+            outcome: {
+              label: "Defensible conditional release",
+              verdict: "Strong first attempt.",
+              gate_standing: "cleared",
+              program_health_average: 68.2,
+              score_before_overall_cap: 74.5,
+              overall_cap: null,
+            },
+            assessment_contract: {
+              participant_score: "Participant scoring explanation.",
+              program_state: "Programme-state explanation.",
+              critical_gates: "Gate explanation.",
+              free_text_boundary: "Free text is not semantically judged.",
+            },
+            gates: [{
+              gate_id: "G1",
+              title: "Authority",
+              status: "pass",
+              reason: "Authority stayed human.",
+              expected_control: "Binding action stays human-authorized.",
+              required_next_step: "Preserve the control.",
+              effect: "No cap.",
+              basis_decisions: ["D08"],
+            }],
             timeline: new Array(20).fill(null).map((_, index) => ({ decision_id: `D${String(index + 1).padStart(2, "0")}` })),
             strengths: [],
             development_needs: [],
@@ -424,9 +456,44 @@ describe("AI Delivery Arena React product", () => {
         emit={vi.fn()}
       />,
     );
-    expect(screen.getByText("Conditional release")).toBeInTheDocument();
+    expect(screen.getByText("Defensible conditional release")).toBeInTheDocument();
+    expect(screen.getByText("Strong first attempt.")).toBeInTheDocument();
     expect(screen.getByText("74.5")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Evidence pack/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Completed run/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Critical gates" }));
+    expect(screen.getByRole("heading", { name: "Authority" })).toBeInTheDocument();
+    expect(screen.getByText("Binding action stays human-authorized.")).toBeInTheDocument();
+  });
+
+  it("requires confirmation before requesting participant run deletion", () => {
+    const emit = vi.fn();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(
+      <App
+        data={{
+          ...base,
+          screen: "centre",
+          authenticated: true,
+          user: { id: "user-one", email: "leader@example.com" },
+          centre: {
+            runs: [{
+              run_id: "attempt-one",
+              display_name: "First attempt",
+              status: "completed",
+              completed: 20,
+              total: 20,
+              revision: 21,
+              updated_at: "2026-08-03T12:00:00Z",
+            }],
+          },
+        }}
+        emit={emit}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Delete First attempt" }));
+    expect(confirm).toHaveBeenCalled();
+    expect(emit).toHaveBeenCalledWith("delete_run", { run_id: "attempt-one" });
+    confirm.mockRestore();
   });
 });

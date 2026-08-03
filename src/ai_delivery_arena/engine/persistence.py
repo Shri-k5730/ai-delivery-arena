@@ -139,6 +139,8 @@ class RunStore(Protocol):
 
     def delete_draft(self, run_id: str) -> None: ...
 
+    def delete_run(self, run_id: str) -> None: ...
+
     def export_document(self, run_id: str) -> dict[str, Any]: ...
 
 
@@ -398,6 +400,18 @@ class JsonRunStore:
         path = self._draft_path(run_id)
         if path.exists():
             path.unlink()
+
+    def delete_run(self, run_id: str) -> None:
+        """Delete one explicitly named run and its participant-owned sidecars."""
+
+        restored = self.load(run_id)
+        path = restored.path
+        metadata_path = self._metadata_path(run_id)
+        draft_path = self._draft_path(run_id)
+        path.unlink()
+        for sidecar in (metadata_path, draft_path):
+            if sidecar.exists():
+                sidecar.unlink()
 
     def export_document(self, run_id: str) -> dict[str, Any]:
         return _read_json_object(self.path_for(run_id))
