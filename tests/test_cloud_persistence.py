@@ -54,10 +54,6 @@ class FakeQuery:
         self.payload = dict(payload)
         return self
 
-    def delete(self) -> "FakeQuery":
-        self.action = "delete"
-        return self
-
     def eq(self, column: str, value: Any) -> "FakeQuery":
         self.filters.append((column, value))
         return self
@@ -95,13 +91,6 @@ class FakeQuery:
             for row in matching:
                 row.update(self.payload)
             return FakeResponse([dict(row) for row in matching])
-
-        if self.action == "delete":
-            deleted = [dict(row) for row in matching]
-            self.database.rows = [
-                row for row in self.database.rows if row not in matching
-            ]
-            return FakeResponse(deleted)
 
         if hasattr(self, "order_column"):
             matching.sort(
@@ -239,23 +228,6 @@ class CloudPersistenceTestCase(unittest.TestCase):
         self.service.start_run("not-finished")
         with self.assertRaises(CompletedRunError):
             self.service.export_run_document("not-finished")
-
-    def test_participant_can_delete_only_their_own_cloud_run(self) -> None:
-        self.service.start_run("delete-cloud")
-        other = ArenaService(
-            ROOT,
-            store_factory=lambda engine: SupabaseRunStore(
-                self.database,
-                "user-b",
-                engine,
-                signing_key=self.key,
-            ),
-        )
-        with self.assertRaisesRegex(Exception, "does not exist"):
-            other.delete_run("delete-cloud")
-        self.assertEqual(1, len(self.database.rows))
-        self.service.delete_run("delete-cloud")
-        self.assertEqual([], self.service.list_runs())
 
 
 if __name__ == "__main__":

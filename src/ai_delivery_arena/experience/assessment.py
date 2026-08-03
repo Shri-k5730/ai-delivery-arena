@@ -83,8 +83,6 @@ class AssessmentReport:
     recommendation: str
     scope_assessed: str
     release_valid: bool
-    outcome: dict[str, object]
-    assessment_contract: dict[str, object]
     gates: tuple[dict[str, object], ...]
     dimensions: tuple[DimensionResult, ...]
     raw_overall: float
@@ -106,8 +104,6 @@ class AssessmentReport:
             "recommendation": self.recommendation,
             "scope_assessed": self.scope_assessed,
             "release_valid": self.release_valid,
-            "outcome": self.outcome,
-            "assessment_contract": self.assessment_contract,
             "gates": list(self.gates),
             "dimensions": [dimension.as_dict() for dimension in self.dimensions],
             "raw_overall": self.raw_overall,
@@ -137,96 +133,6 @@ _DIMENSIONS: tuple[tuple[str, str, str, float], ...] = (
 _DIMENSION_BY_PREFIX = {
     prefix: (dimension_id, label, weight)
     for prefix, dimension_id, label, weight in _DIMENSIONS
-}
-
-
-_ROUTE_LABELS = {
-    "full_release": "full release",
-    "conditional_release": "conditional release",
-    "reduced_scope": "reduced-scope release",
-    "extended_pilot": "extended pilot",
-    "pause": "programme pause",
-}
-
-
-_GATE_GUIDANCE: dict[str, dict[str, object]] = {
-    "G1": {
-        "expected_control": (
-            "AI may recommend, draft, or prepare work, but binding supplier or "
-            "commercial commitments remain with an authorized human."
-        ),
-        "recovery": (
-            "Disable binding actions and require delegated buyer or CPO approval "
-            "before any live commercial use."
-        ),
-        "relevant_decisions": ("D05", "D08", "D11", "D20"),
-    },
-    "G2": {
-        "expected_control": (
-            "The released scope must use approved models, permitted data, and an "
-            "authorized processing route."
-        ),
-        "recovery": (
-            "Remove the prohibited route or data from scope, use the approved "
-            "fallback, and obtain CISO or data-owner approval before release."
-        ),
-        "relevant_decisions": ("D06", "D07", "D14", "D16", "D20"),
-    },
-    "G3": {
-        "expected_control": (
-            "Acceptance must define task- and cohort-specific thresholds, material "
-            "error severity, abstention, and an authorized acceptor."
-        ),
-        "recovery": (
-            "Define the missing segmented thresholds and abstention route, then "
-            "rerun evaluation before production approval."
-        ),
-        "relevant_decisions": ("D07", "D12", "D13", "D17", "D20"),
-    },
-    "G4": {
-        "expected_control": (
-            "Any known materially failing cohort or process must be excluded, "
-            "blocked, or routed to an effective safe fallback."
-        ),
-        "recovery": (
-            "Remove the failed cohort from the release, route it to manual handling, "
-            "and retest it against its own threshold before expansion."
-        ),
-        "relevant_decisions": ("D13", "D17", "D20"),
-    },
-    "G5": {
-        "expected_control": (
-            "Every accepted material risk must have a named owner who actually holds "
-            "the authority to accept it."
-        ),
-        "recovery": (
-            "Name the authorized business, security, data, or operational risk "
-            "acceptor and record the escalation path."
-        ),
-        "relevant_decisions": ("D08", "D10", "D13", "D17", "D20"),
-    },
-    "G6": {
-        "expected_control": (
-            "Material value, accuracy, compliance, cost, and readiness claims must "
-            "match the evidence and be corrected when contradicted."
-        ),
-        "recovery": (
-            "Withdraw the contradicted claim, communicate the correction, and rebase "
-            "it on attributable evidence with an accountable owner."
-        ),
-        "relevant_decisions": ("D01", "D02", "D09", "D15", "D18", "D20"),
-    },
-    "G7": {
-        "expected_control": (
-            "An action-capable release must have usable monitoring, incident "
-            "ownership, containment, and rollback."
-        ),
-        "recovery": (
-            "Keep the capability non-binding or prove all four operational controls "
-            "through a tested release rehearsal before activation."
-        ),
-        "relevant_decisions": ("D08", "D12", "D19", "D20"),
-    },
 }
 
 
@@ -420,16 +326,6 @@ class CompetencyAssessor:
 
         final_record = records["D20"]
         final_response = _response_values(final_record)
-        gates = self._gate_report(run, result)
-        failed = tuple(item for item in gates if item["status"] == "fail")
-        unresolved = tuple(
-            item for item in gates if item["status"] == "unresolved"
-        )
-        route_label = _ROUTE_LABELS.get(
-            str(run.terminal_route),
-            str(run.terminal_route or "final recommendation").replace("_", " "),
-        )
-        program_state = result.terminal_health.as_dict(ndigits=1)
         return AssessmentReport(
             run_id=run.run_id,
             scenario=(
@@ -441,36 +337,7 @@ class CompetencyAssessor:
             ),
             scope_assessed=final_record.summary,
             release_valid=bool(result.release_valid),
-            outcome=self._outcome(
-                route_label=route_label,
-                failed=failed,
-                unresolved=unresolved,
-                raw_score=raw_overall,
-                reported_score=reported,
-                overall_cap=result.strictest_overall_cap,
-                program_state=program_state,
-            ),
-            assessment_contract={
-                "participant_score": (
-                    "The competency score assesses deterministic action patterns, "
-                    "evidence citations, response completeness, chronology, and "
-                    "whether later decisions correct or compound earlier risk."
-                ),
-                "program_state": (
-                    "Programme health is the simulated initiative after your "
-                    "decisions. It is a consequence model, not your competency score."
-                ),
-                "critical_gates": (
-                    "Critical gates are non-compensable release controls. A failure "
-                    "can cap the competency result even when other dimensions are strong."
-                ),
-                "free_text_boundary": (
-                    "Free text is retained for traceability and response-completeness "
-                    "checks. This release does not infer expert quality from prose; "
-                    "the selected action and normalized evidence determine substantive scoring."
-                ),
-            },
-            gates=gates,
+            gates=tuple(item.as_dict() for item in result.gate_adjudications),
             dimensions=dimensions,
             raw_overall=raw_overall,
             reported_overall=reported,
@@ -480,131 +347,14 @@ class CompetencyAssessor:
             development_needs=development_needs,
             perspectives=self._perspectives(dimensions, result),
             timeline=self._timeline(run, result),
-            program_state=program_state,
+            program_state=result.terminal_health.as_dict(ndigits=1),
             ledger_head=result.ledger.head_hash,
             notice=(
-                "Private-canary simulation assessment. The rubric is not independently "
+                "Alpha simulation assessment. The rubric is not independently "
                 "calibrated, so this is not a benchmark result, certification, "
                 "hiring signal, or proficiency claim."
             ),
         )
-
-    def _gate_report(
-        self,
-        run: RunInput,
-        result: ReplayResult,
-    ) -> tuple[dict[str, object], ...]:
-        decisions_by_fact: dict[str, list[str]] = {}
-        for record in run.decisions:
-            for fact in _semantic_facts(record):
-                decisions_by_fact.setdefault(fact.key, []).append(record.decision_id)
-
-        output: list[dict[str, object]] = []
-        for gate in result.gate_adjudications:
-            item = gate.as_dict()
-            guidance = _GATE_GUIDANCE[gate.gate_id]
-            basis_decisions = tuple(
-                dict.fromkeys(
-                    decision_id
-                    for key in gate.basis_keys
-                    for decision_id in decisions_by_fact.get(key, [])
-                )
-            )
-            if gate.status is GateStatus.FAIL:
-                next_step = str(guidance["recovery"])
-                effect = (
-                    f"Overall result capped at {gate.overall_cap}."
-                    if gate.overall_cap is not None
-                    else "Release recommendation is blocked pending containment."
-                )
-            elif gate.status is GateStatus.UNRESOLVED:
-                next_step = (
-                    "Resolve the missing evidence or authorized acceptance before "
-                    "treating this control as passed. " + str(guidance["recovery"])
-                )
-                effect = "Independent review required; unresolved is not a pass."
-            elif gate.status is GateStatus.NOT_APPLICABLE:
-                next_step = "Preserve the recorded scope boundary that made this control inapplicable."
-                effect = "No score cap for the recorded final scope."
-            else:
-                next_step = "Preserve this control inside the final scope and operating model."
-                effect = "Control satisfied; no score cap."
-            item.update(
-                {
-                    "expected_control": guidance["expected_control"],
-                    "required_next_step": next_step,
-                    "effect": effect,
-                    "basis_decisions": list(basis_decisions),
-                    "relevant_decisions": list(guidance["relevant_decisions"]),
-                }
-            )
-            output.append(item)
-        return tuple(output)
-
-    @staticmethod
-    def _outcome(
-        *,
-        route_label: str,
-        failed: tuple[dict[str, object], ...],
-        unresolved: tuple[dict[str, object], ...],
-        raw_score: float,
-        reported_score: float,
-        overall_cap: int | None,
-        program_state: dict[str, float],
-    ) -> dict[str, object]:
-        failed_ids = tuple(str(item["gate_id"]) for item in failed)
-        unresolved_ids = tuple(str(item["gate_id"]) for item in unresolved)
-        if failed:
-            label = f"Gate-blocked {route_label}"
-            verdict = (
-                "Not successful overall. The recommendation crossed a critical "
-                "control and cannot be rescued by strengths elsewhere."
-            )
-            standing = "blocked"
-        elif unresolved:
-            label = f"Unresolved {route_label}"
-            verdict = (
-                "Incomplete. No critical failure was proven, but material control "
-                "evidence or authorized acceptance is still missing."
-            )
-            standing = "review_required"
-        elif reported_score >= 70:
-            label = f"Defensible {route_label}"
-            verdict = (
-                "Strong first attempt. The recommendation remained inside the "
-                "recorded evidence and control boundaries."
-            )
-            standing = "cleared"
-        elif reported_score >= 50:
-            label = f"Defensible but fragile {route_label}"
-            verdict = (
-                "Mixed result. Critical controls held, but several competency areas "
-                "need stronger evidence or integration."
-            )
-            standing = "cleared"
-        else:
-            label = f"Weak but gate-cleared {route_label}"
-            verdict = (
-                "Weak result. No critical gate failed, but the recorded judgment "
-                "does not yet form a strong delivery recommendation."
-            )
-            standing = "cleared"
-
-        program_average = round(
-            sum(program_state.values()) / len(program_state),
-            1,
-        )
-        return {
-            "label": label,
-            "verdict": verdict,
-            "gate_standing": standing,
-            "failed_gate_ids": list(failed_ids),
-            "unresolved_gate_ids": list(unresolved_ids),
-            "score_before_overall_cap": raw_score,
-            "score_after_gate_cap": reported_score,
-            "overall_cap": overall_cap,
-            "program_health_average": program_average,
-        }
 
     def _score_criterion(
         self,

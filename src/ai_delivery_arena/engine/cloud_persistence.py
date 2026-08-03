@@ -308,21 +308,6 @@ class SupabaseRunStore:
             .eq("run_id", run_id)
         )
 
-    def delete_run(self, run_id: str) -> None:
-        """Delete one run owned by the authenticated participant."""
-
-        self.load(run_id)
-        self._execute(
-            self.client.table(self.table_name)
-            .delete()
-            .eq("owner_id", self.owner_id)
-            .eq("run_id", run_id)
-        )
-        if self._select("run_id", run_id=run_id):
-            raise SupabasePersistenceError(
-                f"{run_id}: cloud run deletion did not complete"
-            )
-
     def export_document(self, run_id: str) -> dict[str, Any]:
         restored = self.load(run_id)
         if restored.result.status.value != "completed":

@@ -21,7 +21,7 @@ from .app import (
 )
 
 
-PRODUCT_VERSION = "0.5.0"
+PRODUCT_VERSION = "0.4.0"
 VALID_VIEWS = {
     "centre",
     "briefing",
@@ -75,7 +75,7 @@ def _base_model(
             "name": "AI Delivery Arena",
             "tagline": "Judgment under pressure",
             "version": PRODUCT_VERSION,
-            "status": "Private Canary",
+            "status": "Hosted Beta",
         },
         "screen": screen,
         "configured": settings.configured,
@@ -92,19 +92,6 @@ def _base_model(
                 settings.github_url.removesuffix(".git").rstrip("/")
                 + "/blob/main/TERMS.md"
             ),
-            "feedback": settings.feedback_url or None,
-            "incident": (
-                f"mailto:{settings.incident_email}"
-                if settings.incident_email
-                else None
-            ),
-        },
-        "canary": {
-            "admission_ready": settings.admission_ready,
-            "feedback_ready": bool(settings.feedback_url),
-            "incident_ready": bool(settings.incident_email),
-            "allow_local_mode": settings.allow_local_mode,
-            "ready": settings.canary_ready,
         },
         "notice": _pop_notice(st.session_state),
     }
@@ -375,10 +362,6 @@ def _sign_in(
 ) -> None:
     email = _require_text(payload, "email")
     password = _require_text(payload, "password")
-    if not settings.email_is_invited(email):
-        raise ExperienceError(
-            "This private canary accepts only invited email addresses."
-        )
     client = _new_supabase_client(settings)
     response = client.auth.sign_in_with_password(
         {"email": email, "password": password}
@@ -401,10 +384,6 @@ def _sign_up(
 ) -> None:
     email = _require_text(payload, "email")
     password = _require_text(payload, "password")
-    if not settings.email_is_invited(email):
-        raise ExperienceError(
-            "This email is not on the private canary invitation list."
-        )
     if len(password) < 8:
         raise ExperienceError("Use a password of at least 8 characters.")
     if payload.get("consent") is not True:
@@ -748,20 +727,14 @@ def dispatch_event(
     if action == "sign_in":
         if not settings.configured:
             raise ExperienceError("Cloud account access is not configured.")
-        if not settings.canary_ready:
-            raise ExperienceError("Private canary configuration is incomplete.")
         _sign_in(st, settings, payload)
         return
     if action == "sign_up":
         if not settings.configured:
             raise ExperienceError("Cloud account access is not configured.")
-        if not settings.canary_ready:
-            raise ExperienceError("Private canary configuration is incomplete.")
         _sign_up(st, settings, payload)
         return
     if action == "open_local":
-        if not settings.allow_local_mode:
-            raise ExperienceError("Local mode is disabled in this hosted deployment.")
         st.session_state["arena_local_mode"] = True
         st.session_state["arena_view"] = "centre"
         return
@@ -806,18 +779,6 @@ def dispatch_event(
         display_name = _require_text(payload, "display_name")
         service.rename_run(run_id, display_name)
         _notice(st.session_state, "Attempt renamed.", kind="success")
-    elif action == "delete_run":
-        run_id = _require_text(payload, "run_id")
-        service.delete_run(run_id)
-        if st.session_state.get("arena_run_id") == run_id:
-            st.session_state.pop("arena_run_id", None)
-        _clear_persistence_cache(st.session_state)
-        _set_view(st.session_state, "centre")
-        _notice(
-            st.session_state,
-            "Attempt deleted permanently.",
-            kind="success",
-        )
     else:
         raise ExperienceError(f"Unsupported browser action: {action}")
 
@@ -867,7 +828,7 @@ def main() -> None:
                 "name": "AI Delivery Arena",
                 "tagline": "Judgment under pressure",
                 "version": PRODUCT_VERSION,
-                "status": "Private Canary",
+                "status": "Hosted Beta",
             },
             "screen": "fatal",
             "fatal": {

@@ -29,7 +29,6 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
-  Trash2,
   Upload,
   UserRound,
   WalletCards,
@@ -61,20 +60,7 @@ export type ArenaModel = {
   local_mode?: boolean;
   authenticated?: boolean;
   user?: { id: string; email: string } | null;
-  links?: {
-    github?: string;
-    privacy?: string;
-    terms?: string;
-    feedback?: string;
-    incident?: string;
-  };
-  canary?: {
-    admission_ready?: boolean;
-    feedback_ready?: boolean;
-    incident_ready?: boolean;
-    allow_local_mode?: boolean;
-    ready?: boolean;
-  };
+  links?: { github?: string; privacy?: string; terms?: string };
   notice?: { kind: string; message: string } | null;
   marketing?: JsonMap;
   centre?: JsonMap;
@@ -126,16 +112,6 @@ const EMPTY_DRAFT: Draft = {
 
 const STAGE_ICONS = [Target, Search, Zap, ShieldCheck, BadgeCheck];
 
-const PUBLIC_GATES = [
-  ["G1", "Commercial authority", "Binding supplier or commercial actions require an authorized human."],
-  ["G2", "Data and model permission", "Released data flows and model routes must be explicitly permitted."],
-  ["G3", "Evaluation sufficiency", "Acceptance needs segmented thresholds, severity, abstention and an authorized acceptor."],
-  ["G4", "Severe cohort failure", "A known materially failing cohort must be blocked, excluded or safely routed."],
-  ["G5", "Accountable ownership", "A material risk needs an owner who has authority to accept it."],
-  ["G6", "Claim integrity", "Material value, accuracy, cost and readiness claims must follow the evidence."],
-  ["G7", "Operational control", "Action-capable AI needs usable monitoring, incident ownership, containment and rollback."],
-] as const;
-
 function cx(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
 }
@@ -163,24 +139,6 @@ function draftStorageKey(
 ): string {
   const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
   return `ai-delivery-arena:draft:${owner}:${runId}:${decisionId}:${revision}`;
-}
-
-function clearRunBrowserData(data: ArenaModel, runId: string): void {
-  if (typeof window === "undefined") return;
-  const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
-  const prefixes = [
-    `ai-delivery-arena:draft:${owner}:${runId}:`,
-    `ai-delivery-arena:seen-activity:${owner}:${runId}`,
-  ];
-  const keys = Array.from(
-    { length: window.localStorage.length },
-    (_, index) => window.localStorage.key(index),
-  ).filter((key): key is string => Boolean(key));
-  keys.forEach((key) => {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      window.localStorage.removeItem(key);
-    }
-  });
 }
 
 function serializeDraft(draft: Draft): string {
@@ -502,29 +460,9 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
           Add the Supabase and Arena secrets to enable private cloud accounts.
           The local edition remains available for development.
         </p>
-        {data.canary?.allow_local_mode && (
-          <Button className="button-full" onClick={() => emit("open_local")}>
-            Open local edition <ArrowRight size={17} />
-          </Button>
-        )}
-      </aside>
-    );
-  }
-
-  if (!data.canary?.ready) {
-    return (
-      <aside className="auth-panel" id="access">
-        <span className="eyebrow">Private canary</span>
-        <h2>Canary access is closed</h2>
-        <p>
-          Account access stays closed until invitation admission, participant
-          feedback, and incident reporting are all configured. This prevents an
-          unfinished canary from becoming an accidental public beta.
-        </p>
-        <div className="auth-trust">
-          <LockKeyhole size={15} />
-          <span>No participant access is available yet.</span>
-        </div>
+        <Button className="button-full" onClick={() => emit("open_local")}>
+          Open local edition <ArrowRight size={17} />
+        </Button>
       </aside>
     );
   }
@@ -533,10 +471,10 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
     <aside className="auth-panel" id="access">
       <div className="auth-heading">
         <span className="status-pill status-live">
-          <span /> Private canary
+          <span /> Public beta
         </span>
         <h2>Enter the Arena</h2>
-        <p>Invited participants only. Durable cloud save. Resume across devices.</p>
+        <p>Private attempts. Durable cloud save. Resume across devices.</p>
       </div>
       <div className="segmented-control" role="tablist">
         <button
@@ -601,7 +539,7 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
           </label>
         )}
         <Button type="submit" className="button-full" busy={busy}>
-          {mode === "signin" ? "Continue" : "Create invited account"}
+          {mode === "signin" ? "Continue" : "Create free account"}
           {!busy && <ArrowRight size={17} />}
         </Button>
       </form>
@@ -634,7 +572,7 @@ function Marketing({ data, emit }: { data: ArenaModel; emit: Emit }) {
             </p>
             <div className="hero-actions">
               <a className="button button-light" href="#access">
-                Enter the private canary <ArrowRight size={18} />
+                Start the public beta <ArrowRight size={18} />
               </a>
               <a
                 className="button button-hero-ghost"
@@ -781,13 +719,12 @@ function Marketing({ data, emit }: { data: ArenaModel; emit: Emit }) {
           <span className="brand-mark">A</span>
           <span className="brand-copy">
             <strong>AI Delivery Arena</strong>
-            <small>Private Canary v{data.product.version}</small>
+            <small>Hosted Beta v{data.product.version}</small>
           </span>
         </div>
         <div>
           <a href={data.links?.privacy} target="_blank" rel="noreferrer">Privacy</a>
           <a href={data.links?.terms} target="_blank" rel="noreferrer">Terms</a>
-          {data.links?.incident && <a href={data.links.incident}>Report an incident</a>}
           <span>Synthetic scenario</span>
           <span>Apache-2.0</span>
         </div>
@@ -812,9 +749,8 @@ function AppShell({
       <ProductHeader data={data} emit={emit} />
       {children}
       <footer className="product-footer">
-        <span>Private Canary v{data.product.version}</span>
+        <span>Hosted Beta v{data.product.version}</span>
         <span>Simulation assessment. Not independently calibrated.</span>
-        {data.links?.incident && <a href={data.links.incident}>Report an incident</a>}
       </footer>
     </div>
   );
@@ -1024,21 +960,6 @@ function RunCentre({ data, emit }: { data: ArenaModel; emit: Emit }) {
                     >
                       <Pencil size={15} />
                     </button>
-                    <button
-                      className="run-delete-action"
-                      type="button"
-                      aria-label={`Delete ${run.display_name}`}
-                      onClick={() => {
-                        if (window.confirm(
-                          `Delete ${run.display_name}? This removes the run and cannot be undone. Download any completed evidence first.`,
-                        )) {
-                          clearRunBrowserData(data, run.run_id);
-                          emit("delete_run", { run_id: run.run_id });
-                        }
-                      }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
                     <Button variant="secondary" onClick={() => openRun(run)}>
                       {run.status === "completed" ? "Open debrief" : "Resume"}
                       <ChevronRight size={16} />
@@ -1120,45 +1041,6 @@ function Briefing({ data, emit }: { data: ArenaModel; emit: Emit }) {
                 </article>
               ))}
             </div>
-            <section className="assessment-contract-preview">
-              <span className="eyebrow">What this exercise measures</span>
-              <h3>Three results. Do not confuse them.</h3>
-              <div className="assessment-layer-grid">
-                <article>
-                  <strong>1. Your competency</strong>
-                  <p>Selected actions, evidence use, response completeness, chronology and later corrections produce a seven-dimension score.</p>
-                </article>
-                <article>
-                  <strong>2. Programme health</strong>
-                  <p>Your choices change the simulated initiative. This state shows consequences; it is not your competency score.</p>
-                </article>
-                <article>
-                  <strong>3. Critical gates</strong>
-                  <p>Seven non-compensable release controls can cap the result. Strength elsewhere cannot cancel a material breach.</p>
-                </article>
-              </div>
-              <p className="assessment-boundary-note">
-                Your written rationale is retained for traceability and must be complete.
-                This release does not semantically judge prose. Substantive deterministic
-                scoring follows the action selected and the evidence recorded.
-              </p>
-            </section>
-            <section className="gate-handbook">
-              <span className="eyebrow">The seven release controls</span>
-              <h3>What every final recommendation must establish.</h3>
-              <p>
-                These are control expectations, not an answer key. You still decide how
-                to satisfy them as evidence and pressure change.
-              </p>
-              <div>
-                {PUBLIC_GATES.map(([id, title, copy]) => (
-                  <article key={id}>
-                    <span>{id}</span>
-                    <div><strong>{title}</strong><p>{copy}</p></div>
-                  </article>
-                ))}
-              </div>
-            </section>
             <h3>Programme stages</h3>
             <div className="briefing-stages">
               {stages.map((stage, index) => {
@@ -2010,15 +1892,8 @@ function Consequence({ data, emit }: { data: ArenaModel; emit: Emit }) {
 function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const report = data.report ?? {};
   const run = data.run ?? {};
-  const outcome = report.outcome ?? {};
   const [tab, setTab] = useState<"summary" | "gates" | "scorecard" | "timeline">("summary");
   const failed = (report.gates ?? []).filter((gate: JsonMap) => gate.status === "fail");
-  const unresolved = (report.gates ?? []).filter((gate: JsonMap) => gate.status === "unresolved");
-  const standing = outcome.gate_standing === "blocked"
-    ? "Blocked"
-    : outcome.gate_standing === "review_required"
-      ? "Review required"
-      : "Cleared";
   return (
     <AppShell data={data} emit={emit}>
       <main className="debrief-page">
@@ -2030,20 +1905,19 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
             <div className="debrief-heading-grid">
               <div>
                 <span className="eyebrow eyebrow-light">Executive debrief</span>
-                <h1>{outcome.label ?? report.recommendation}</h1>
-                <p className="debrief-verdict">{outcome.verdict}</p>
-                <p className="debrief-recommendation"><strong>Your D20 recommendation:</strong> {report.recommendation}</p>
+                <h1>{report.recommendation}</h1>
+                <p>{report.scope_assessed}</p>
               </div>
               <div className="score-lockup">
                 <strong>{report.reported_overall}</strong>
-                <div><span>Gate-adjusted competency</span><b>{report.provisional_label}</b></div>
+                <div><span>Provisional score</span><b>{report.provisional_label}</b></div>
               </div>
             </div>
             <div className="debrief-facts">
-              <div><span>Gate standing</span><strong className={standing === "Cleared" ? "positive" : "negative"}>{standing}</strong></div>
-              <div><span>Critical controls</span><strong>{failed.length} failed · {unresolved.length} unresolved</strong></div>
-              <div><span>Programme health</span><strong>{outcome.program_health_average ?? "–"} / 100</strong></div>
-              <div><span>Score before overall cap</span><strong>{outcome.score_before_overall_cap ?? report.raw_overall} / 100</strong></div>
+              <div><span>Release decision</span><strong className={report.release_valid ? "positive" : "negative"}>{report.release_valid ? "Valid" : "Invalid"}</strong></div>
+              <div><span>Critical gates failed</span><strong>{failed.length} / {(report.gates ?? []).length}</strong></div>
+              <div><span>Decisions recorded</span><strong>{(report.timeline ?? []).length}</strong></div>
+              <div><span>Ledger verified</span><strong><ShieldCheck size={15} /> Yes</strong></div>
             </div>
           </div>
         </section>
@@ -2066,7 +1940,7 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
         <section className="debrief-content page-width">
           {tab === "summary" && <DebriefSummary report={report} />}
           {tab === "gates" && <GateReport gates={report.gates ?? []} />}
-          {tab === "scorecard" && <Scorecard report={report} />}
+          {tab === "scorecard" && <Scorecard dimensions={report.dimensions ?? []} />}
           {tab === "timeline" && <DecisionTimeline timeline={report.timeline ?? []} />}
         </section>
 
@@ -2083,11 +1957,6 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
               >
                 <FileJson size={16} /> Completed run
               </Button>
-              {data.links?.feedback && (
-                <a className="button button-light" href={data.links.feedback} target="_blank" rel="noreferrer">
-                  Share canary feedback <ExternalLink size={16} />
-                </a>
-              )}
             </div>
           </div>
         </section>
@@ -2100,32 +1969,8 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
 }
 
 function DebriefSummary({ report }: { report: JsonMap }) {
-  const outcome = report.outcome ?? {};
-  const contract = report.assessment_contract ?? {};
   return (
     <div className="summary-view">
-      <section className="result-explainer">
-        <div className="subsection-heading"><Info size={19} /><div><span className="eyebrow">How to read this result</span><h2>One run produced three different judgments.</h2></div></div>
-        <div className="result-layer-grid">
-          <article>
-            <span>Participant competency</span>
-            <strong>{report.reported_overall} / 100</strong>
-            <p>{contract.participant_score}</p>
-            {outcome.overall_cap != null && <small>Overall score capped at {outcome.overall_cap} by a failed critical gate.</small>}
-          </article>
-          <article>
-            <span>Simulated programme</span>
-            <strong>{outcome.program_health_average} / 100</strong>
-            <p>{contract.program_state}</p>
-          </article>
-          <article>
-            <span>Release controls</span>
-            <strong>{outcome.gate_standing === "blocked" ? "Blocked" : outcome.gate_standing === "review_required" ? "Review" : "Cleared"}</strong>
-            <p>{contract.critical_gates}</p>
-          </article>
-        </div>
-        <p className="assessment-disclosure"><ShieldAlert size={16} />{contract.free_text_boundary}</p>
-      </section>
       <section className="judgment-columns">
         <div>
           <div className="subsection-heading"><CheckCircle2 size={19} /><div><span className="eyebrow">Strongest evidence</span><h2>Judgments that held</h2></div></div>
@@ -2168,62 +2013,36 @@ function DebriefSummary({ report }: { report: JsonMap }) {
 }
 
 function GateReport({ gates }: { gates: JsonMap[] }) {
-  const counts = gates.reduce((total: JsonMap, gate: JsonMap) => {
-    total[gate.status] = (total[gate.status] ?? 0) + 1;
-    return total;
-  }, {});
   return (
     <div className="gate-view">
       <div className="section-lead">
         <span className="eyebrow">Non-compensable controls</span>
         <h2>Critical gates</h2>
-        <p>A failed critical gate cannot be offset by strength elsewhere. Unresolved is not a pass.</p>
-        <div className="gate-counts">
-          <span>{counts.pass ?? 0} passed</span>
-          <span>{counts.fail ?? 0} failed</span>
-          <span>{counts.unresolved ?? 0} unresolved</span>
-        </div>
+        <p>A failed critical gate cannot be offset by strength elsewhere.</p>
       </div>
       <div className="gate-grid">
-        {gates.map((gate) => {
-          const Icon = gate.status === "pass" ? CheckCircle2 : gate.status === "unresolved" ? ShieldAlert : gate.status === "not_applicable" ? Circle : XCircle;
-          const trace = (gate.basis_decisions ?? []).length > 0 ? gate.basis_decisions : gate.relevant_decisions;
-          return (
-          <article className={cx("gate-card", `gate-${gate.status.replace("_", "-")}`)} key={gate.gate_id}>
+        {gates.map((gate) => (
+          <article className={cx("gate-card", gate.status === "pass" ? "gate-pass" : "gate-fail")} key={gate.gate_id}>
             <div>
-              <span><Icon size={18} />{gate.status.replace("_", " ").toUpperCase()}</span>
+              <span>{gate.status === "pass" ? <CheckCircle2 size={18} /> : <XCircle size={18} />}{gate.status.toUpperCase()}</span>
               <strong>{gate.gate_id}</strong>
             </div>
-            <h3>{gate.title}</h3>
-            <dl>
-              <div><dt>Control expected</dt><dd>{gate.expected_control}</dd></div>
-              <div><dt>What your run established</dt><dd>{gate.reason}</dd></div>
-              <div><dt>{gate.status === "pass" ? "Keep it passed" : "Required recovery"}</dt><dd>{gate.required_next_step}</dd></div>
-            </dl>
-            <footer><span>{gate.effect}</span><small>Trace: {(trace ?? []).join(", ") || "Final scope evidence"}</small></footer>
+            <h3>{gate.name}</h3><p>{gate.reason}</p>
           </article>
-          );
-        })}
+        ))}
       </div>
     </div>
   );
 }
 
-function Scorecard({ report }: { report: JsonMap }) {
-  const dimensions: JsonMap[] = report.dimensions ?? [];
+function Scorecard({ dimensions }: { dimensions: JsonMap[] }) {
   const [open, setOpen] = useState<string | null>(dimensions[0]?.id ?? null);
   return (
     <div className="scorecard-view">
       <div className="section-lead">
         <span className="eyebrow">Seven dimensions · 28 criteria</span>
         <h2>Competency scorecard</h2>
-        <p>Scores reflect selected actions, normalized evidence, chronology, corrections and response completeness.</p>
-        {report.overall_cap != null && (
-          <div className="score-cap-callout">
-            <ShieldAlert size={18} />
-            <span>The criterion-weighted score was {report.raw_overall}. A critical gate capped the reported result at {report.overall_cap}.</span>
-          </div>
-        )}
+        <p>Scores reflect recorded actions, chronology, controls and evidence citations.</p>
       </div>
       <div className="dimension-list">
         {dimensions.map((dimension) => (

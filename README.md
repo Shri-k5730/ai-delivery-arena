@@ -6,13 +6,13 @@ AI Delivery Arena places a person in charge of a realistic enterprise AI initiat
 
 The Arena does not test whether someone can define RAG, drift, agents, or model evaluation. It tests whether they can apply that knowledge while business value, data quality, governance, cost, delivery pressure, and adoption compete for attention.
 
-> **Current status:** Private Canary v0.5 provides a full React and TypeScript product interface on Streamlit Community Cloud, invitation-only Supabase authentication, encrypted user-scoped runs, participant deletion, immediate browser draft recovery, and batched cloud synchronization. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
+> **Current status:** Hosted Beta v0.4 provides a full React and TypeScript product interface on Streamlit Community Cloud, with Supabase authentication, encrypted user-scoped runs, immediate browser draft recovery, and batched cloud synchronization. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
 
-## Run the Private Canary locally
+## Run the Hosted Beta locally
 
 Requirements: Python 3.11 or later and a Supabase project.
 
-1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql) and [`supabase/migrations/202608030001_private_canary.sql`](supabase/migrations/202608030001_private_canary.sql) in the Supabase SQL editor. Existing beta projects need only the second migration.
+1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql) in the Supabase SQL editor.
 2. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`.
 3. Add the Supabase URL, publishable/anon key, a generated Arena signing key,
    and the Arena application URL.
@@ -57,20 +57,20 @@ python -m unittest discover -s tests -v
 See [`docs/ALPHA.md`](docs/ALPHA.md) for the participant workflow, local storage
 contract, assessment boundary, and troubleshooting.
 
-## v0.5 private canary contract
+## v0.4 hosted beta contract
 
-| Element | v0.5 commitment |
+| Element | v0.4 commitment |
 |---|---|
-| Public entry | Professional product page with invited-participant sign-in and account creation |
-| Authentication | Supabase email/password authentication plus server-side email allowlist |
+| Public entry | Professional product page with sign-in and account creation |
+| Authentication | Supabase email/password authentication |
 | Product UI | React and TypeScript, mounted as a full-page Streamlit Component v2 |
 | Hosted runtime | Streamlit Community Cloud with hidden Streamlit chrome |
 | Cloud persistence | Supabase Postgres with RLS and encrypted canonical saves |
-| Run centre | One-click resume, completed attempts, local-run import, and participant-owned deletion |
+| Run centre | One-click resume, completed attempts, and local-run import |
 | Decision loop | Brief, investigate, draft, review, commit, consequence, continue |
 | Drafts | Immediate browser recovery plus 10-second, one-request cloud autosave until permanent commitment |
 | Completed runs | Replay-verified and immutable |
-| Debrief | Explicit programme outcome, competency result, gate standing, recovery guidance, scorecard, timeline, and exports |
+| Debrief | Executive summary, gates, scorecard, perspectives, timeline, exports |
 | Local edition | Existing dependency-free server and `.arena-runs` remain supported |
 | Cost boundary | Designed for Streamlit Community Cloud and Supabase Free limits |
 | Assessment claim | Simulation assessment. Not certification or calibrated benchmark |
