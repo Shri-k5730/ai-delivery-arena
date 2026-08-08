@@ -20,6 +20,7 @@ from .persistence import (
     PersistenceError,
     RestoredRun,
     RevisionConflictError,
+    RunContext,
     RunNotFoundError,
     RunSummary,
 )
@@ -78,7 +79,7 @@ class SupabaseRunStore:
             self.client.table(self.table_name)
             .select(
                 "run_id,display_name,status,decision_count,total_decisions,"
-                "revision,updated_at"
+                "revision,updated_at,attempt_kind,source_run_id"
             )
             .eq("owner_id", self.owner_id)
             .order("updated_at", desc=True)
@@ -92,6 +93,12 @@ class SupabaseRunStore:
                 total=int(row["total_decisions"]),
                 revision=int(row["revision"]),
                 updated_at=str(row["updated_at"]),
+                attempt_kind=str(row.get("attempt_kind") or "first_attempt"),
+                source_run_id=(
+                    str(row["source_run_id"])
+                    if row.get("source_run_id")
+                    else None
+                ),
             )
             for row in rows
         )
@@ -156,6 +163,8 @@ class SupabaseRunStore:
             "draft_decision_id": None,
             "draft_revision": None,
             "draft_payload": None,
+            "attempt_kind": "first_attempt",
+            "source_run_id": None,
         }
         try:
             if current is None:
@@ -251,6 +260,53 @@ class SupabaseRunStore:
         if not rows:
             raise RunNotFoundError(f"run save does not exist: {run_id}")
 
+    def set_run_context(
+        self,
+        run_id: str,
+        *,
+        attempt_kind: str,
+        source_run_id: str | None,
+    ) -> None:
+        if attempt_kind not in {"first_attempt", "practice_replay"}:
+            raise PersistenceError(f"unsupported attempt kind: {attempt_kind}")
+        if attempt_kind == "practice_replay" and not source_run_id:
+            raise PersistenceError("a practice replay requires a source run")
+        if attempt_kind == "first_attempt" and source_run_id is not None:
+            raise PersistenceError("a first attempt cannot reference a source run")
+        if source_run_id is not None:
+            self.codec._validate_run_id(source_run_id)
+        rows = self._execute(
+            self.client.table(self.table_name)
+            .update(
+                {
+                    "attempt_kind": attempt_kind,
+                    "source_run_id": source_run_id,
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
+            )
+            .eq("owner_id", self.owner_id)
+            .eq("run_id", run_id)
+        )
+        if not rows:
+            raise RunNotFoundError(f"run save does not exist: {run_id}")
+
+    def get_run_context(self, run_id: str) -> RunContext:
+        rows = self._select(
+            "run_id,attempt_kind,source_run_id",
+            run_id=run_id,
+        )
+        if not rows:
+            raise RunNotFoundError(f"run save does not exist: {run_id}")
+        row = rows[0]
+        return RunContext(
+            attempt_kind=str(row.get("attempt_kind") or "first_attempt"),
+            source_run_id=(
+                str(row["source_run_id"])
+                if row.get("source_run_id")
+                else None
+            ),
+        )
+
     def save_draft(
         self,
         run_id: str,
@@ -307,6 +363,21 @@ class SupabaseRunStore:
             .eq("owner_id", self.owner_id)
             .eq("run_id", run_id)
         )
+
+    def delete_run(self, run_id: str) -> None:
+        """Delete one run owned by the authenticated participant."""
+
+        self.load(run_id)
+        self._execute(
+            self.client.table(self.table_name)
+            .delete()
+            .eq("owner_id", self.owner_id)
+            .eq("run_id", run_id)
+        )
+        if self._select("run_id", run_id=run_id):
+            raise SupabasePersistenceError(
+                f"{run_id}: cloud run deletion did not complete"
+            )
 
     def export_document(self, run_id: str) -> dict[str, Any]:
         restored = self.load(run_id)

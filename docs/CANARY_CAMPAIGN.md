@@ -14,6 +14,11 @@ Do not publish the application until:
 4. no release-blocking defect remains open; and
 5. the feedback form and incident contact are ready.
 
+v0.6 enforces items 2 and 3 in the product and adds a structured development
+outcome plus a separate corrective replay. Deployment still requires the
+actual invited-email list, feedback-form URL, and incident email in Streamlit
+Secrets. Missing admission configuration keeps account access closed.
+
 ## Campaign concept: The Founding Decision Table
 
 Invite applicants to answer one short, unscored decision prompt before they

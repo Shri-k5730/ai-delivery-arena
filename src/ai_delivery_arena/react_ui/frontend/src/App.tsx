@@ -24,11 +24,13 @@ import {
   LogOut,
   Menu,
   Pencil,
+  RefreshCcw,
   Search,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
   Target,
+  Trash2,
   Upload,
   UserRound,
   WalletCards,
@@ -60,7 +62,20 @@ export type ArenaModel = {
   local_mode?: boolean;
   authenticated?: boolean;
   user?: { id: string; email: string } | null;
-  links?: { github?: string; privacy?: string; terms?: string };
+  links?: {
+    github?: string;
+    privacy?: string;
+    terms?: string;
+    feedback?: string;
+    incident?: string;
+  };
+  canary?: {
+    admission_ready?: boolean;
+    feedback_ready?: boolean;
+    incident_ready?: boolean;
+    allow_local_mode?: boolean;
+    ready?: boolean;
+  };
   notice?: { kind: string; message: string } | null;
   marketing?: JsonMap;
   centre?: JsonMap;
@@ -71,6 +86,8 @@ export type ArenaModel = {
   sync?: JsonMap | null;
   consequence?: JsonMap;
   report?: JsonMap;
+  run_context?: JsonMap;
+  comparison?: JsonMap;
   completed_run_document?: JsonMap | null;
   fatal?: { title: string; message: string };
 };
@@ -112,6 +129,16 @@ const EMPTY_DRAFT: Draft = {
 
 const STAGE_ICONS = [Target, Search, Zap, ShieldCheck, BadgeCheck];
 
+const PUBLIC_GATES = [
+  ["G1", "Commercial authority", "Binding supplier or commercial actions require an authorized human."],
+  ["G2", "Data and model permission", "Released data flows and model routes must be explicitly permitted."],
+  ["G3", "Evaluation sufficiency", "Acceptance needs segmented thresholds, severity, abstention and an authorized acceptor."],
+  ["G4", "Severe cohort failure", "A known materially failing cohort must be blocked, excluded or safely routed."],
+  ["G5", "Accountable ownership", "A material risk needs an owner who has authority to accept it."],
+  ["G6", "Claim integrity", "Material value, accuracy, cost and readiness claims must follow the evidence."],
+  ["G7", "Operational control", "Action-capable AI needs usable monitoring, incident ownership, containment and rollback."],
+] as const;
+
 function cx(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
 }
@@ -139,6 +166,24 @@ function draftStorageKey(
 ): string {
   const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
   return `ai-delivery-arena:draft:${owner}:${runId}:${decisionId}:${revision}`;
+}
+
+function clearRunBrowserData(data: ArenaModel, runId: string): void {
+  if (typeof window === "undefined") return;
+  const owner = data.user?.id ?? (data.local_mode ? "local" : "participant");
+  const prefixes = [
+    `ai-delivery-arena:draft:${owner}:${runId}:`,
+    `ai-delivery-arena:seen-activity:${owner}:${runId}`,
+  ];
+  const keys = Array.from(
+    { length: window.localStorage.length },
+    (_, index) => window.localStorage.key(index),
+  ).filter((key): key is string => Boolean(key));
+  keys.forEach((key) => {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+      window.localStorage.removeItem(key);
+    }
+  });
 }
 
 function serializeDraft(draft: Draft): string {
@@ -460,9 +505,29 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
           Add the Supabase and Arena secrets to enable private cloud accounts.
           The local edition remains available for development.
         </p>
-        <Button className="button-full" onClick={() => emit("open_local")}>
-          Open local edition <ArrowRight size={17} />
-        </Button>
+        {data.canary?.allow_local_mode && (
+          <Button className="button-full" onClick={() => emit("open_local")}>
+            Open local edition <ArrowRight size={17} />
+          </Button>
+        )}
+      </aside>
+    );
+  }
+
+  if (!data.canary?.ready) {
+    return (
+      <aside className="auth-panel" id="access">
+        <span className="eyebrow">Private canary</span>
+        <h2>Canary access is closed</h2>
+        <p>
+          Account access stays closed until invitation admission, participant
+          feedback, and incident reporting are all configured. This prevents an
+          unfinished canary from becoming an accidental public beta.
+        </p>
+        <div className="auth-trust">
+          <LockKeyhole size={15} />
+          <span>No participant access is available yet.</span>
+        </div>
       </aside>
     );
   }
@@ -471,10 +536,10 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
     <aside className="auth-panel" id="access">
       <div className="auth-heading">
         <span className="status-pill status-live">
-          <span /> Public beta
+          <span /> Private canary
         </span>
         <h2>Enter the Arena</h2>
-        <p>Private attempts. Durable cloud save. Resume across devices.</p>
+        <p>Invited participants only. Durable cloud save. Resume across devices.</p>
       </div>
       <div className="segmented-control" role="tablist">
         <button
@@ -539,7 +604,7 @@ function AuthPanel({ data, emit }: { data: ArenaModel; emit: Emit }) {
           </label>
         )}
         <Button type="submit" className="button-full" busy={busy}>
-          {mode === "signin" ? "Continue" : "Create free account"}
+          {mode === "signin" ? "Continue" : "Create invited account"}
           {!busy && <ArrowRight size={17} />}
         </Button>
       </form>
@@ -572,7 +637,7 @@ function Marketing({ data, emit }: { data: ArenaModel; emit: Emit }) {
             </p>
             <div className="hero-actions">
               <a className="button button-light" href="#access">
-                Start the public beta <ArrowRight size={18} />
+                Enter the private canary <ArrowRight size={18} />
               </a>
               <a
                 className="button button-hero-ghost"
@@ -719,12 +784,13 @@ function Marketing({ data, emit }: { data: ArenaModel; emit: Emit }) {
           <span className="brand-mark">A</span>
           <span className="brand-copy">
             <strong>AI Delivery Arena</strong>
-            <small>Hosted Beta v{data.product.version}</small>
+            <small>Private Canary v{data.product.version}</small>
           </span>
         </div>
         <div>
           <a href={data.links?.privacy} target="_blank" rel="noreferrer">Privacy</a>
           <a href={data.links?.terms} target="_blank" rel="noreferrer">Terms</a>
+          {data.links?.incident && <a href={data.links.incident}>Report an incident</a>}
           <span>Synthetic scenario</span>
           <span>Apache-2.0</span>
         </div>
@@ -749,8 +815,9 @@ function AppShell({
       <ProductHeader data={data} emit={emit} />
       {children}
       <footer className="product-footer">
-        <span>Hosted Beta v{data.product.version}</span>
+        <span>Private Canary v{data.product.version}</span>
         <span>Simulation assessment. Not independently calibrated.</span>
+        {data.links?.incident && <a href={data.links.incident}>Report an incident</a>}
       </footer>
     </div>
   );
@@ -841,6 +908,9 @@ function RunCentre({ data, emit }: { data: ArenaModel; emit: Emit }) {
                 <span className="status-pill status-progress">
                   <span /> In progress
                 </span>
+                {active.attempt_kind === "practice_replay" && (
+                  <span className="attempt-kind-pill">Practice replay</span>
+                )}
                 <span>Last saved {dateLabel(active.updated_at)}</span>
               </div>
               <h2>{active.display_name}</h2>
@@ -939,7 +1009,10 @@ function RunCentre({ data, emit }: { data: ArenaModel; emit: Emit }) {
                       ) : (
                         <strong>{run.display_name}</strong>
                       )}
-                      <small>{run.run_id}</small>
+                      <small>
+                        {run.attempt_kind === "practice_replay" ? "Practice replay" : "First attempt"}
+                        {run.source_run_id ? ` · source ${run.source_run_id}` : ""}
+                      </small>
                     </div>
                   </div>
                   <div>
@@ -959,6 +1032,21 @@ function RunCentre({ data, emit }: { data: ArenaModel; emit: Emit }) {
                       }}
                     >
                       <Pencil size={15} />
+                    </button>
+                    <button
+                      className="run-delete-action"
+                      type="button"
+                      aria-label={`Delete ${run.display_name}`}
+                      onClick={() => {
+                        if (window.confirm(
+                          `Delete ${run.display_name}? This removes the run and cannot be undone. Download any completed evidence first.`,
+                        )) {
+                          clearRunBrowserData(data, run.run_id);
+                          emit("delete_run", { run_id: run.run_id });
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
                     </button>
                     <Button variant="secondary" onClick={() => openRun(run)}>
                       {run.status === "completed" ? "Open debrief" : "Resume"}
@@ -1041,6 +1129,45 @@ function Briefing({ data, emit }: { data: ArenaModel; emit: Emit }) {
                 </article>
               ))}
             </div>
+            <section className="assessment-contract-preview">
+              <span className="eyebrow">What this exercise measures</span>
+              <h3>Three results. Do not confuse them.</h3>
+              <div className="assessment-layer-grid">
+                <article>
+                  <strong>1. Your competency</strong>
+                  <p>Selected actions, evidence use, response completeness, chronology and later corrections produce a seven-dimension score.</p>
+                </article>
+                <article>
+                  <strong>2. Programme health</strong>
+                  <p>Your choices change the simulated initiative. This state shows consequences; it is not your competency score.</p>
+                </article>
+                <article>
+                  <strong>3. Critical gates</strong>
+                  <p>Seven non-compensable release controls can cap the result. Strength elsewhere cannot cancel a material breach.</p>
+                </article>
+              </div>
+              <p className="assessment-boundary-note">
+                Your written rationale is retained for traceability and must be complete.
+                This release does not semantically judge prose. Substantive deterministic
+                scoring follows the action selected and the evidence recorded.
+              </p>
+            </section>
+            <section className="gate-handbook">
+              <span className="eyebrow">The seven release controls</span>
+              <h3>What every final recommendation must establish.</h3>
+              <p>
+                These are control expectations, not an answer key. You still decide how
+                to satisfy them as evidence and pressure change.
+              </p>
+              <div>
+                {PUBLIC_GATES.map(([id, title, copy]) => (
+                  <article key={id}>
+                    <span>{id}</span>
+                    <div><strong>{title}</strong><p>{copy}</p></div>
+                  </article>
+                ))}
+              </div>
+            </section>
             <h3>Programme stages</h3>
             <div className="briefing-stages">
               {stages.map((stage, index) => {
@@ -1892,8 +2019,15 @@ function Consequence({ data, emit }: { data: ArenaModel; emit: Emit }) {
 function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
   const report = data.report ?? {};
   const run = data.run ?? {};
-  const [tab, setTab] = useState<"summary" | "gates" | "scorecard" | "timeline">("summary");
+  const outcome = report.outcome ?? {};
+  const [tab, setTab] = useState<"summary" | "gates" | "scorecard" | "development" | "timeline">("summary");
   const failed = (report.gates ?? []).filter((gate: JsonMap) => gate.status === "fail");
+  const unresolved = (report.gates ?? []).filter((gate: JsonMap) => gate.status === "unresolved");
+  const standing = outcome.gate_standing === "blocked"
+    ? "Blocked"
+    : outcome.gate_standing === "review_required"
+      ? "Review required"
+      : "Cleared";
   return (
     <AppShell data={data} emit={emit}>
       <main className="debrief-page">
@@ -1905,19 +2039,20 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
             <div className="debrief-heading-grid">
               <div>
                 <span className="eyebrow eyebrow-light">Executive debrief</span>
-                <h1>{report.recommendation}</h1>
-                <p>{report.scope_assessed}</p>
+                <h1>{outcome.label ?? report.recommendation}</h1>
+                <p className="debrief-verdict">{outcome.verdict}</p>
+                <p className="debrief-recommendation"><strong>Your D20 recommendation:</strong> {report.recommendation}</p>
               </div>
               <div className="score-lockup">
                 <strong>{report.reported_overall}</strong>
-                <div><span>Provisional score</span><b>{report.provisional_label}</b></div>
+                <div><span>Gate-adjusted competency</span><b>{report.provisional_label}</b></div>
               </div>
             </div>
             <div className="debrief-facts">
-              <div><span>Release decision</span><strong className={report.release_valid ? "positive" : "negative"}>{report.release_valid ? "Valid" : "Invalid"}</strong></div>
-              <div><span>Critical gates failed</span><strong>{failed.length} / {(report.gates ?? []).length}</strong></div>
-              <div><span>Decisions recorded</span><strong>{(report.timeline ?? []).length}</strong></div>
-              <div><span>Ledger verified</span><strong><ShieldCheck size={15} /> Yes</strong></div>
+              <div><span>Gate standing</span><strong className={standing === "Cleared" ? "positive" : "negative"}>{standing}</strong></div>
+              <div><span>Critical controls</span><strong>{failed.length} failed · {unresolved.length} unresolved</strong></div>
+              <div><span>Programme health</span><strong>{outcome.program_health_average ?? "–"} / 100</strong></div>
+              <div><span>Score before overall cap</span><strong>{outcome.score_before_overall_cap ?? report.raw_overall} / 100</strong></div>
             </div>
           </div>
         </section>
@@ -1928,6 +2063,7 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
               ["summary", "Executive summary"],
               ["gates", "Critical gates"],
               ["scorecard", "Competency scorecard"],
+              ["development", "Development plan"],
               ["timeline", "Decision timeline"],
             ].map(([id, label]) => (
               <button key={id} className={tab === id ? "active" : ""} type="button" onClick={() => setTab(id as any)}>
@@ -1940,7 +2076,16 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
         <section className="debrief-content page-width">
           {tab === "summary" && <DebriefSummary report={report} />}
           {tab === "gates" && <GateReport gates={report.gates ?? []} />}
-          {tab === "scorecard" && <Scorecard dimensions={report.dimensions ?? []} />}
+          {tab === "scorecard" && <Scorecard report={report} />}
+          {tab === "development" && (
+            <DevelopmentPlan
+              report={report}
+              run={run}
+              runContext={data.run_context ?? { attempt_kind: "first_attempt" }}
+              comparison={data.comparison}
+              emit={emit}
+            />
+          )}
           {tab === "timeline" && <DecisionTimeline timeline={report.timeline ?? []} />}
         </section>
 
@@ -1957,6 +2102,11 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
               >
                 <FileJson size={16} /> Completed run
               </Button>
+              {data.links?.feedback && (
+                <a className="button button-light" href={data.links.feedback} target="_blank" rel="noreferrer">
+                  Share canary feedback <ExternalLink size={16} />
+                </a>
+              )}
             </div>
           </div>
         </section>
@@ -1969,8 +2119,32 @@ function Debrief({ data, emit }: { data: ArenaModel; emit: Emit }) {
 }
 
 function DebriefSummary({ report }: { report: JsonMap }) {
+  const outcome = report.outcome ?? {};
+  const contract = report.assessment_contract ?? {};
   return (
     <div className="summary-view">
+      <section className="result-explainer">
+        <div className="subsection-heading"><Info size={19} /><div><span className="eyebrow">How to read this result</span><h2>One run produced three different judgments.</h2></div></div>
+        <div className="result-layer-grid">
+          <article>
+            <span>Participant competency</span>
+            <strong>{report.reported_overall} / 100</strong>
+            <p>{contract.participant_score}</p>
+            {outcome.overall_cap != null && <small>Overall score capped at {outcome.overall_cap} by a failed critical gate.</small>}
+          </article>
+          <article>
+            <span>Simulated programme</span>
+            <strong>{outcome.program_health_average} / 100</strong>
+            <p>{contract.program_state}</p>
+          </article>
+          <article>
+            <span>Release controls</span>
+            <strong>{outcome.gate_standing === "blocked" ? "Blocked" : outcome.gate_standing === "review_required" ? "Review" : "Cleared"}</strong>
+            <p>{contract.critical_gates}</p>
+          </article>
+        </div>
+        <p className="assessment-disclosure"><ShieldAlert size={16} />{contract.free_text_boundary}</p>
+      </section>
       <section className="judgment-columns">
         <div>
           <div className="subsection-heading"><CheckCircle2 size={19} /><div><span className="eyebrow">Strongest evidence</span><h2>Judgments that held</h2></div></div>
@@ -2013,36 +2187,62 @@ function DebriefSummary({ report }: { report: JsonMap }) {
 }
 
 function GateReport({ gates }: { gates: JsonMap[] }) {
+  const counts = gates.reduce((total: JsonMap, gate: JsonMap) => {
+    total[gate.status] = (total[gate.status] ?? 0) + 1;
+    return total;
+  }, {});
   return (
     <div className="gate-view">
       <div className="section-lead">
         <span className="eyebrow">Non-compensable controls</span>
         <h2>Critical gates</h2>
-        <p>A failed critical gate cannot be offset by strength elsewhere.</p>
+        <p>A failed critical gate cannot be offset by strength elsewhere. Unresolved is not a pass.</p>
+        <div className="gate-counts">
+          <span>{counts.pass ?? 0} passed</span>
+          <span>{counts.fail ?? 0} failed</span>
+          <span>{counts.unresolved ?? 0} unresolved</span>
+        </div>
       </div>
       <div className="gate-grid">
-        {gates.map((gate) => (
-          <article className={cx("gate-card", gate.status === "pass" ? "gate-pass" : "gate-fail")} key={gate.gate_id}>
+        {gates.map((gate) => {
+          const Icon = gate.status === "pass" ? CheckCircle2 : gate.status === "unresolved" ? ShieldAlert : gate.status === "not_applicable" ? Circle : XCircle;
+          const trace = (gate.basis_decisions ?? []).length > 0 ? gate.basis_decisions : gate.relevant_decisions;
+          return (
+          <article className={cx("gate-card", `gate-${gate.status.replace("_", "-")}`)} key={gate.gate_id}>
             <div>
-              <span>{gate.status === "pass" ? <CheckCircle2 size={18} /> : <XCircle size={18} />}{gate.status.toUpperCase()}</span>
+              <span><Icon size={18} />{gate.status.replace("_", " ").toUpperCase()}</span>
               <strong>{gate.gate_id}</strong>
             </div>
-            <h3>{gate.name}</h3><p>{gate.reason}</p>
+            <h3>{gate.title}</h3>
+            <dl>
+              <div><dt>Control expected</dt><dd>{gate.expected_control}</dd></div>
+              <div><dt>What your run established</dt><dd>{gate.reason}</dd></div>
+              <div><dt>{gate.status === "pass" ? "Keep it passed" : "Required recovery"}</dt><dd>{gate.required_next_step}</dd></div>
+            </dl>
+            <footer><span>{gate.effect}</span><small>Trace: {(trace ?? []).join(", ") || "Final scope evidence"}</small></footer>
           </article>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function Scorecard({ dimensions }: { dimensions: JsonMap[] }) {
+function Scorecard({ report }: { report: JsonMap }) {
+  const dimensions: JsonMap[] = report.dimensions ?? [];
   const [open, setOpen] = useState<string | null>(dimensions[0]?.id ?? null);
   return (
     <div className="scorecard-view">
       <div className="section-lead">
         <span className="eyebrow">Seven dimensions · 28 criteria</span>
         <h2>Competency scorecard</h2>
-        <p>Scores reflect recorded actions, chronology, controls and evidence citations.</p>
+        <p>Scores reflect selected actions, normalized evidence, chronology, corrections and response completeness.</p>
+        {report.overall_cap != null && (
+          <div className="score-cap-callout">
+            <ShieldAlert size={18} />
+            <span>The criterion-weighted score was {report.raw_overall}. A critical gate capped the reported result at {report.overall_cap}.</span>
+          </div>
+        )}
       </div>
       <div className="dimension-list">
         {dimensions.map((dimension) => (
@@ -2071,6 +2271,131 @@ function Scorecard({ dimensions }: { dimensions: JsonMap[] }) {
           </article>
         ))}
       </div>
+    </div>
+  );
+}
+
+function DevelopmentPlan({
+  report,
+  run,
+  runContext,
+  comparison,
+  emit,
+}: {
+  report: JsonMap;
+  run: JsonMap;
+  runContext: JsonMap;
+  comparison?: JsonMap;
+  emit: Emit;
+}) {
+  const learning = comparison?.source_learning_outcome ?? report.learning_outcome ?? {};
+  const actions: JsonMap[] = comparison?.source_development_actions ?? report.development_actions ?? [];
+  const replayActions: JsonMap[] = comparison?.actions ?? [];
+  const replayById = Object.fromEntries(
+    replayActions.map((item) => [item.id, item]),
+  );
+  const isReplay = runContext.attempt_kind === "practice_replay";
+  return (
+    <div className="development-view">
+      <section className="learning-hero">
+        <div>
+          <span className="eyebrow">Primary learning</span>
+          <h2>{learning.primary_learning}</h2>
+          <p>{learning.closure_standard}</p>
+        </div>
+        <div className="learning-status">
+          <span>Development status</span>
+          <strong>{comparison?.practice_status === "corrected" ? "Practice corrected" : actions.length ? "Diagnosed" : "Practice ready"}</strong>
+          <small>Transfer {comparison?.transfer_status === "verified" ? "verified" : "not yet verified"}</small>
+        </div>
+      </section>
+
+      <section className="closure-path" aria-label="Gap closure path">
+        {(learning.stages ?? []).map((stage: JsonMap, index: number) => {
+          let status = stage.status;
+          if (comparison) {
+            if (index <= 1) status = "complete";
+            if (index === 2) status = comparison.practice_status === "corrected" ? "complete" : "next";
+            if (index === 3) status = "locked";
+          }
+          return (
+            <article className={cx("closure-stage", `closure-${status}`)} key={stage.id}>
+              <span>{index + 1}</span>
+              <div><strong>{stage.label}</strong><small>{status === "complete" ? "Complete" : status === "next" ? "Next" : "Not verified"}</small></div>
+            </article>
+          );
+        })}
+      </section>
+      <p className="artifact-boundary"><ShieldAlert size={16} />{learning.artifact_boundary}</p>
+
+      {comparison && (
+        <section className={cx("replay-comparison", comparison.practice_status === "corrected" && "replay-corrected")}>
+          <div>
+            <RefreshCcw size={20} />
+            <div><span className="eyebrow">Corrective replay result</span><h2>{comparison.corrected_actions} of {comparison.total_actions} actions practice-corrected</h2></div>
+          </div>
+          <dl>
+            <div><dt>Competency change</dt><dd>{comparison.score_change > 0 ? "+" : ""}{comparison.score_change} points</dd></div>
+            <div><dt>Gate standing</dt><dd>{comparison.gate_standing_before} → {comparison.gate_standing_after}</dd></div>
+            <div><dt>Transfer</dt><dd>Not verified</dd></div>
+          </dl>
+          <p>{comparison.transfer_note}</p>
+        </section>
+      )}
+
+      <section className="development-actions">
+        <div className="section-lead">
+            <span className="eyebrow">From diagnosis to observable proof</span>
+            <h2>{actions.length} corrective assignments</h2>
+            <p>Each assignment identifies the control and artefact required before the decision is tested again.</p>
+        </div>
+        <div className="development-action-list">
+          {actions.map((action) => {
+            const replay = replayById[action.id];
+            const status = replay?.status ?? action.status;
+            return (
+              <article className={cx("development-action-card", `development-${action.severity}`)} key={action.id}>
+                <header>
+                  <div><span>Priority {action.priority}</span><strong>{action.id}</strong></div>
+                  <span className={cx("development-status", status === "practice_corrected" && "development-status-corrected")}>
+                    {status === "practice_corrected" ? "Practice corrected" : status === "still_open" ? "Still open" : action.severity}
+                  </span>
+                </header>
+                <h3>{action.title}</h3>
+                <p className="action-diagnosis">{action.diagnosis}</p>
+                <dl>
+                  <div><dt>Pattern to interrupt</dt><dd>{action.failure_pattern}</dd></div>
+                  <div><dt>Corrective control</dt><dd>{action.corrective_control}</dd></div>
+                  <div><dt>Artefact to build</dt><dd><FileCheck2 size={15} />{action.required_artifact}</dd></div>
+                  <div><dt>Replay assignment</dt><dd>{action.practice_assignment}</dd></div>
+                  <div><dt>Proof required</dt><dd>{action.closure_test}</dd></div>
+                </dl>
+                <footer>
+                  <span>Source: {(action.source_decisions ?? []).join(", ") || "Assessment evidence"}</span>
+                  {replay && <strong>{replay.evidence}</strong>}
+                </footer>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="development-next-step">
+        <div>
+          <span className="eyebrow">Next evidence boundary</span>
+          <h2>{isReplay ? "Carry the corrected controls into the next transformation." : "Test the controls without changing the first attempt."}</h2>
+          <p>
+            {isReplay
+              ? "A replay shows whether you can correct the same situation after feedback. The next scenario must test whether the judgment transfers when the facts and pressure pattern change."
+              : "The replay uses the same scenario and remains uncoached. It creates a separate record and never replaces this benchmark result."}
+          </p>
+        </div>
+        {!isReplay && (
+          <Button onClick={() => emit("start_replay", { source_run_id: run.run_id })}>
+            Start corrective replay <RefreshCcw size={16} />
+          </Button>
+        )}
+      </section>
     </div>
   );
 }

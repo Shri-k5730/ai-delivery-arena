@@ -212,6 +212,119 @@ class ExperienceTestCase(unittest.TestCase):
         self.assertEqual(view["history"], restored["history"])
         self.assertEqual(view["ledger"], restored["ledger"])
 
+    def test_participant_can_delete_one_local_run_and_sidecars(self) -> None:
+        view = self.service.start_run("delete-local", display_name="Delete me")
+        self.service.save_draft(
+            "delete-local",
+            "D01",
+            self.response("D01", "B", []),
+            expected_revision=int(view["revision"]),
+        )
+        self.service.delete_run("delete-local")
+        self.assertEqual([], self.service.list_runs())
+        with self.assertRaisesRegex(ExperienceError, "run not found"):
+            self.service.get_run("delete-local")
+
+    def test_debrief_separates_outcome_programme_and_competency_layers(self) -> None:
+        self.complete("unsafe-debrief", UNSAFE_OPTIONS, requests=EVIDENCE_REQUESTS[:4])
+        report = self.service.debrief("unsafe-debrief")
+        self.assertEqual("blocked", report.outcome["gate_standing"])
+        self.assertIn("Gate-blocked", report.outcome["label"])
+        self.assertIn("program_health_average", report.outcome)
+        self.assertIn("free_text_boundary", report.assessment_contract)
+        self.assertTrue(all("expected_control" in gate for gate in report.gates))
+        self.assertTrue(all("required_next_step" in gate for gate in report.gates))
+
+    def test_debrief_converts_gaps_into_testable_development_actions(self) -> None:
+        self.complete(
+            "unsafe-development",
+            UNSAFE_OPTIONS,
+            requests=EVIDENCE_REQUESTS[:4],
+        )
+        report = self.service.debrief("unsafe-development")
+        self.assertGreaterEqual(len(report.development_actions), 1)
+        action = report.development_actions[0]
+        self.assertEqual("critical_gate", action["type"])
+        self.assertEqual("diagnosed", action["status"])
+        self.assertTrue(action["corrective_control"])
+        self.assertTrue(action["required_artifact"])
+        self.assertTrue(action["practice_assignment"])
+        self.assertTrue(action["closure_test"])
+        self.assertIn("same-scenario replay", report.learning_outcome["closure_standard"])
+        self.assertEqual("locked", report.learning_outcome["stages"][-1]["status"])
+
+    def test_practice_replay_is_linked_separate_and_compared_without_claiming_transfer(self) -> None:
+        self.complete(
+            "benchmark-source",
+            UNSAFE_OPTIONS,
+            requests=EVIDENCE_REQUESTS[:4],
+        )
+        view = self.service.start_practice_replay(
+            "benchmark-source",
+            "corrective-replay",
+            display_name="Corrective replay",
+        )
+        while view["status"] != "completed":
+            decision = view["current_decision"]
+            decision_id = str(decision["id"])
+            citations = [
+                str(item["id"])
+                for item in view["evidence"]
+                if item["state"] in {"available", "verified"}
+            ]
+            if decision_id == "D01":
+                for evidence_id in EVIDENCE_REQUESTS:
+                    view = self.service.request_evidence(
+                        "corrective-replay",
+                        evidence_id,
+                        expected_revision=int(view["revision"]),
+                    )
+                citations = [
+                    str(item["id"])
+                    for item in view["evidence"]
+                    if item["state"] in {"available", "verified"}
+                ]
+            view = self.service.commit_decision(
+                "corrective-replay",
+                self.response(
+                    decision_id,
+                    STRONG_OPTIONS[decision_id],
+                    citations,
+                ),
+                expected_revision=int(view["revision"]),
+            )
+
+        context = self.service.run_context("corrective-replay")
+        self.assertEqual("practice_replay", context["attempt_kind"])
+        self.assertEqual("benchmark-source", context["source_run_id"])
+        summaries = {
+            item["run_id"]: item for item in self.service.list_runs()
+        }
+        self.assertEqual(
+            "practice_replay",
+            summaries["corrective-replay"]["attempt_kind"],
+        )
+        comparison = self.service.replay_comparison("corrective-replay")
+        self.assertEqual("corrected", comparison["practice_status"])
+        self.assertEqual("not_verified", comparison["transfer_status"])
+        self.assertEqual(
+            comparison["total_actions"],
+            comparison["corrected_actions"],
+        )
+        self.assertEqual(
+            comparison["total_actions"],
+            len(comparison["source_development_actions"]),
+        )
+        self.assertEqual(
+            "blocked",
+            self.service.debrief("benchmark-source").outcome["gate_standing"],
+        )
+        with self.assertRaisesRegex(
+            ExperienceError,
+            "delete the linked practice replay",
+        ):
+            self.service.delete_run("benchmark-source")
+
 
 if __name__ == "__main__":
     unittest.main()

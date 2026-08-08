@@ -1,8 +1,8 @@
-# Hosted Beta Terms and Assessment Disclaimer
+# Private Canary Terms and Assessment Disclaimer
 
-Last updated: 25 July 2026
+Last updated: 3 August 2026
 
-AI Delivery Arena Hosted Beta is an experimental, open-source simulation
+AI Delivery Arena Private Canary is an experimental, open-source simulation
 assessment. By using a hosted deployment, a participant acknowledges:
 
 1. The scenario and organizations are synthetic.

@@ -54,6 +54,10 @@ class FakeQuery:
         self.payload = dict(payload)
         return self
 
+    def delete(self) -> "FakeQuery":
+        self.action = "delete"
+        return self
+
     def eq(self, column: str, value: Any) -> "FakeQuery":
         self.filters.append((column, value))
         return self
@@ -91,6 +95,13 @@ class FakeQuery:
             for row in matching:
                 row.update(self.payload)
             return FakeResponse([dict(row) for row in matching])
+
+        if self.action == "delete":
+            deleted = [dict(row) for row in matching]
+            self.database.rows = [
+                row for row in self.database.rows if row not in matching
+            ]
+            return FakeResponse(deleted)
 
         if hasattr(self, "order_column"):
             matching.sort(
@@ -145,6 +156,37 @@ class CloudPersistenceTestCase(unittest.TestCase):
         self.assertIsInstance(payload, str)
         self.assertNotIn("selected_rule_ids", payload)
         self.assertNotIn("ledger_head", payload)
+
+    def test_cloud_run_context_links_replay_without_mutating_source(self) -> None:
+        source = self.service.start_run("cloud-source")
+        self.service.store.set_run_context(
+            "cloud-source",
+            attempt_kind="first_attempt",
+            source_run_id=None,
+        )
+        replay = self.service.start_run("cloud-replay")
+        self.service.store.set_run_context(
+            "cloud-replay",
+            attempt_kind="practice_replay",
+            source_run_id="cloud-source",
+        )
+        self.assertEqual(1, source["revision"])
+        self.assertEqual(1, replay["revision"])
+        self.assertEqual(
+            {
+                "attempt_kind": "practice_replay",
+                "source_run_id": "cloud-source",
+            },
+            self.service.run_context("cloud-replay"),
+        )
+        summaries = {
+            item["run_id"]: item for item in self.service.list_runs()
+        }
+        self.assertEqual("first_attempt", summaries["cloud-source"]["attempt_kind"])
+        self.assertEqual(
+            "cloud-source",
+            summaries["cloud-replay"]["source_run_id"],
+        )
 
     def test_cloud_revision_and_draft_contract(self) -> None:
         view = self.service.start_run("cloud-draft")
@@ -228,6 +270,23 @@ class CloudPersistenceTestCase(unittest.TestCase):
         self.service.start_run("not-finished")
         with self.assertRaises(CompletedRunError):
             self.service.export_run_document("not-finished")
+
+    def test_participant_can_delete_only_their_own_cloud_run(self) -> None:
+        self.service.start_run("delete-cloud")
+        other = ArenaService(
+            ROOT,
+            store_factory=lambda engine: SupabaseRunStore(
+                self.database,
+                "user-b",
+                engine,
+                signing_key=self.key,
+            ),
+        )
+        with self.assertRaisesRegex(Exception, "does not exist"):
+            other.delete_run("delete-cloud")
+        self.assertEqual(1, len(self.database.rows))
+        self.service.delete_run("delete-cloud")
+        self.assertEqual([], self.service.list_runs())
 
 
 if __name__ == "__main__":

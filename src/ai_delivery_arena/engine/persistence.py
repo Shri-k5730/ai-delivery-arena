@@ -88,6 +88,8 @@ class RunSummary:
     total: int
     revision: int
     updated_at: str
+    attempt_kind: str
+    source_run_id: str | None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -98,6 +100,22 @@ class RunSummary:
             "total": self.total,
             "revision": self.revision,
             "updated_at": self.updated_at,
+            "attempt_kind": self.attempt_kind,
+            "source_run_id": self.source_run_id,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RunContext:
+    """Participant-visible relationship between a benchmark and a replay."""
+
+    attempt_kind: str = "first_attempt"
+    source_run_id: str | None = None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "attempt_kind": self.attempt_kind,
+            "source_run_id": self.source_run_id,
         }
 
 
@@ -126,6 +144,16 @@ class RunStore(Protocol):
 
     def set_display_name(self, run_id: str, display_name: str) -> None: ...
 
+    def set_run_context(
+        self,
+        run_id: str,
+        *,
+        attempt_kind: str,
+        source_run_id: str | None,
+    ) -> None: ...
+
+    def get_run_context(self, run_id: str) -> RunContext: ...
+
     def save_draft(
         self,
         run_id: str,
@@ -138,6 +166,8 @@ class RunStore(Protocol):
     def load_draft(self, run_id: str) -> dict[str, Any] | None: ...
 
     def delete_draft(self, run_id: str) -> None: ...
+
+    def delete_run(self, run_id: str) -> None: ...
 
     def export_document(self, run_id: str) -> dict[str, Any]: ...
 
@@ -308,6 +338,11 @@ class JsonRunStore:
                 restored = self.load(path.stem)
             except PersistenceError:
                 continue
+            metadata = self._metadata(restored.run_input.run_id)
+            attempt_kind = str(
+                metadata.get("attempt_kind") or "first_attempt"
+            )
+            source_run_id = metadata.get("source_run_id")
             output.append(
                 RunSummary(
                     run_id=restored.run_input.run_id,
@@ -320,6 +355,16 @@ class JsonRunStore:
                         path.stat().st_mtime,
                         tz=UTC,
                     ).isoformat(),
+                    attempt_kind=(
+                        attempt_kind
+                        if attempt_kind in {"first_attempt", "practice_replay"}
+                        else "first_attempt"
+                    ),
+                    source_run_id=(
+                        str(source_run_id)
+                        if isinstance(source_run_id, str) and source_run_id
+                        else None
+                    ),
                 )
             )
         return tuple(output)
@@ -330,9 +375,48 @@ class JsonRunStore:
         if not value or len(value) > 100:
             raise PersistenceError("display name must contain 1 to 100 characters")
         metadata_path = self._metadata_path(run_id)
+        metadata = self._metadata(run_id)
+        metadata["display_name"] = value
         self._atomic_write_json(
             metadata_path,
-            {"run_id": run_id, "display_name": value},
+            metadata,
+        )
+
+    def set_run_context(
+        self,
+        run_id: str,
+        *,
+        attempt_kind: str,
+        source_run_id: str | None,
+    ) -> None:
+        self.load(run_id)
+        if attempt_kind not in {"first_attempt", "practice_replay"}:
+            raise PersistenceError(f"unsupported attempt kind: {attempt_kind}")
+        if attempt_kind == "practice_replay" and not source_run_id:
+            raise PersistenceError("a practice replay requires a source run")
+        if attempt_kind == "first_attempt" and source_run_id is not None:
+            raise PersistenceError("a first attempt cannot reference a source run")
+        if source_run_id is not None:
+            self._validate_run_id(source_run_id)
+        metadata = self._metadata(run_id)
+        metadata.update(
+            {
+                "attempt_kind": attempt_kind,
+                "source_run_id": source_run_id,
+            }
+        )
+        self._atomic_write_json(self._metadata_path(run_id), metadata)
+
+    def get_run_context(self, run_id: str) -> RunContext:
+        self.load(run_id)
+        metadata = self._metadata(run_id)
+        kind = str(metadata.get("attempt_kind") or "first_attempt")
+        source = metadata.get("source_run_id")
+        return RunContext(
+            attempt_kind=(
+                kind if kind in {"first_attempt", "practice_replay"} else "first_attempt"
+            ),
+            source_run_id=str(source) if isinstance(source, str) and source else None,
         )
 
     def save_draft(
@@ -398,6 +482,18 @@ class JsonRunStore:
         path = self._draft_path(run_id)
         if path.exists():
             path.unlink()
+
+    def delete_run(self, run_id: str) -> None:
+        """Delete one explicitly named run and its participant-owned sidecars."""
+
+        restored = self.load(run_id)
+        path = restored.path
+        metadata_path = self._metadata_path(run_id)
+        draft_path = self._draft_path(run_id)
+        path.unlink()
+        for sidecar in (metadata_path, draft_path):
+            if sidecar.exists():
+                sidecar.unlink()
 
     def export_document(self, run_id: str) -> dict[str, Any]:
         return _read_json_object(self.path_for(run_id))
@@ -714,12 +810,26 @@ class JsonRunStore:
         return self.root / "metadata" / f"{run_id}.json"
 
     def _display_name(self, run_id: str) -> str:
+        document = self._metadata(run_id)
+        value = document.get("display_name")
+        return value if isinstance(value, str) and value.strip() else run_id
+
+    def _metadata(self, run_id: str) -> dict[str, Any]:
         path = self._metadata_path(run_id)
         if not path.exists():
-            return run_id
+            return {
+                "run_id": run_id,
+                "display_name": run_id,
+                "attempt_kind": "first_attempt",
+                "source_run_id": None,
+            }
         try:
             document = _read_json_object(path)
         except PersistenceError:
-            return run_id
-        value = document.get("display_name")
-        return value if isinstance(value, str) and value.strip() else run_id
+            return {
+                "run_id": run_id,
+                "display_name": run_id,
+                "attempt_kind": "first_attempt",
+                "source_run_id": None,
+            }
+        return document

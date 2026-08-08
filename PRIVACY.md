@@ -1,8 +1,8 @@
-# Hosted Beta Privacy Notice
+# Private Canary Privacy Notice
 
-Last updated: 25 July 2026
+Last updated: 3 August 2026
 
-AI Delivery Arena Hosted Beta stores the minimum data needed to authenticate a
+AI Delivery Arena Private Canary stores the minimum data needed to authenticate a
 participant, save a synthetic simulation attempt, resume it across devices, and
 produce a debrief.
 
@@ -33,10 +33,11 @@ retention terms also apply.
 
 ## Retention and deletion
 
-The open-source beta does not yet provide self-service account or run deletion
-inside the interface. A deployment owner can remove a user's rows and Supabase
-Auth account on verified request. Local-edition data remains entirely on the
-operator's machine until they choose to import it.
+Participants can permanently delete an individual run from the Run Centre. The
+application removes the owner-scoped cloud row and same-browser draft/activity
+cache for that run. Run deletion does not delete the Supabase Auth account. A
+deployment owner must handle verified account-deletion requests separately.
+Local-edition data remains entirely on the operator's machine unless imported.
 
 ## Assessment boundary
 
@@ -45,5 +46,5 @@ hiring signal, or an independently calibrated benchmark result.
 
 ## Contact
 
-Deployment operators must replace this section with a monitored contact address
-before inviting external users.
+The deployment must expose a monitored incident address in the product footer
+before participant access is enabled.

@@ -21,7 +21,7 @@ from .app import (
 )
 
 
-PRODUCT_VERSION = "0.4.0"
+PRODUCT_VERSION = "0.6.0"
 VALID_VIEWS = {
     "centre",
     "briefing",
@@ -75,7 +75,7 @@ def _base_model(
             "name": "AI Delivery Arena",
             "tagline": "Judgment under pressure",
             "version": PRODUCT_VERSION,
-            "status": "Hosted Beta",
+            "status": "Private Canary",
         },
         "screen": screen,
         "configured": settings.configured,
@@ -92,6 +92,19 @@ def _base_model(
                 settings.github_url.removesuffix(".git").rstrip("/")
                 + "/blob/main/TERMS.md"
             ),
+            "feedback": settings.feedback_url or None,
+            "incident": (
+                f"mailto:{settings.incident_email}"
+                if settings.incident_email
+                else None
+            ),
+        },
+        "canary": {
+            "admission_ready": settings.admission_ready,
+            "feedback_ready": bool(settings.feedback_url),
+            "incident_ready": bool(settings.incident_email),
+            "allow_local_mode": settings.allow_local_mode,
+            "ready": settings.canary_ready,
         },
         "notice": _pop_notice(st.session_state),
     }
@@ -218,6 +231,10 @@ def build_model(st: Any, settings: HostedSettings) -> dict[str, Any]:
 
     report = service.debrief(str(run_id)).as_dict()
     model["report"] = report
+    run_context = service.run_context(str(run_id))
+    model["run_context"] = run_context
+    if run_context["attempt_kind"] == "practice_replay":
+        model["comparison"] = service.replay_comparison(str(run_id))
     try:
         model["completed_run_document"] = service.export_run_document(str(run_id))
     except PersistenceError:
@@ -362,6 +379,10 @@ def _sign_in(
 ) -> None:
     email = _require_text(payload, "email")
     password = _require_text(payload, "password")
+    if not settings.email_is_invited(email):
+        raise ExperienceError(
+            "This private canary accepts only invited email addresses."
+        )
     client = _new_supabase_client(settings)
     response = client.auth.sign_in_with_password(
         {"email": email, "password": password}
@@ -384,6 +405,10 @@ def _sign_up(
 ) -> None:
     email = _require_text(payload, "email")
     password = _require_text(payload, "password")
+    if not settings.email_is_invited(email):
+        raise ExperienceError(
+            "This email is not on the private canary invitation list."
+        )
     if len(password) < 8:
         raise ExperienceError("Use a password of at least 8 characters.")
     if payload.get("consent") is not True:
@@ -480,6 +505,49 @@ def _start_run(st: Any, service: ArenaService) -> None:
             _empty_draft(),
         )
     _set_view(st.session_state, "decision", run_id=run_id)
+
+
+def _start_replay(
+    st: Any,
+    service: ArenaService,
+    payload: dict[str, Any],
+) -> None:
+    source_run_id = _require_text(payload, "source_run_id")
+    in_progress = [
+        item for item in service.list_runs() if item["status"] != "completed"
+    ]
+    if in_progress:
+        raise ExperienceError(
+            "Finish or delete the in-progress attempt before starting a replay."
+        )
+    replay_run_id = (
+        f"replay-{datetime.now(UTC).strftime('%Y%m%d-%H%M')}-"
+        f"{uuid.uuid4().hex[:6]}"
+    )
+    run = service.start_practice_replay(
+        source_run_id,
+        replay_run_id,
+        display_name=(
+            f"Corrective replay · {datetime.now(UTC).strftime('%d %b %Y')}"
+        ),
+    )
+    _clear_run_ui_state(st.session_state)
+    _cache_run(st.session_state, run)
+    decision = run.get("current_decision")
+    if isinstance(decision, dict):
+        _cache_draft(
+            st.session_state,
+            replay_run_id,
+            str(decision["id"]),
+            int(run["revision"]),
+            _empty_draft(),
+        )
+    _notice(
+        st.session_state,
+        "Corrective replay started. The decision path remains uncoached.",
+        kind="success",
+    )
+    _set_view(st.session_state, "decision", run_id=replay_run_id)
 
 
 def _save_draft(
@@ -727,14 +795,20 @@ def dispatch_event(
     if action == "sign_in":
         if not settings.configured:
             raise ExperienceError("Cloud account access is not configured.")
+        if not settings.canary_ready:
+            raise ExperienceError("Private canary configuration is incomplete.")
         _sign_in(st, settings, payload)
         return
     if action == "sign_up":
         if not settings.configured:
             raise ExperienceError("Cloud account access is not configured.")
+        if not settings.canary_ready:
+            raise ExperienceError("Private canary configuration is incomplete.")
         _sign_up(st, settings, payload)
         return
     if action == "open_local":
+        if not settings.allow_local_mode:
+            raise ExperienceError("Local mode is disabled in this hosted deployment.")
         st.session_state["arena_local_mode"] = True
         st.session_state["arena_view"] = "centre"
         return
@@ -762,6 +836,8 @@ def dispatch_event(
         _set_view(st.session_state, "briefing")
     elif action == "start_run":
         _start_run(st, service)
+    elif action == "start_replay":
+        _start_replay(st, service, payload)
     elif action == "save_draft":
         _save_draft(st, service, payload)
     elif action == "request_evidence":
@@ -779,6 +855,18 @@ def dispatch_event(
         display_name = _require_text(payload, "display_name")
         service.rename_run(run_id, display_name)
         _notice(st.session_state, "Attempt renamed.", kind="success")
+    elif action == "delete_run":
+        run_id = _require_text(payload, "run_id")
+        service.delete_run(run_id)
+        if st.session_state.get("arena_run_id") == run_id:
+            st.session_state.pop("arena_run_id", None)
+        _clear_persistence_cache(st.session_state)
+        _set_view(st.session_state, "centre")
+        _notice(
+            st.session_state,
+            "Attempt deleted permanently.",
+            kind="success",
+        )
     else:
         raise ExperienceError(f"Unsupported browser action: {action}")
 
@@ -828,7 +916,7 @@ def main() -> None:
                 "name": "AI Delivery Arena",
                 "tagline": "Judgment under pressure",
                 "version": PRODUCT_VERSION,
-                "status": "Hosted Beta",
+                "status": "Private Canary",
             },
             "screen": "fatal",
             "fatal": {

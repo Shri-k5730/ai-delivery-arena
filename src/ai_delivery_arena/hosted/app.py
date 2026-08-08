@@ -29,6 +29,10 @@ class HostedSettings:
     signing_key: bytes
     github_url: str
     app_url: str
+    canary_emails: tuple[str, ...] = ()
+    feedback_url: str = ""
+    incident_email: str = ""
+    allow_local_mode: bool = True
 
     @property
     def configured(self) -> bool:
@@ -38,6 +42,22 @@ class HostedSettings:
             and self.signing_key
         )
 
+    @property
+    def admission_ready(self) -> bool:
+        return bool(self.canary_emails)
+
+    @property
+    def canary_ready(self) -> bool:
+        return bool(
+            self.configured
+            and self.admission_ready
+            and self.feedback_url
+            and self.incident_email
+        )
+
+    def email_is_invited(self, email: str) -> bool:
+        return email.strip().casefold() in self.canary_emails
+
 
 def _secret_value(st: Any, section: str, key: str) -> str:
     try:
@@ -45,6 +65,20 @@ def _secret_value(st: Any, section: str, key: str) -> str:
     except (FileNotFoundError, KeyError, TypeError):
         return ""
     return str(value).strip()
+
+
+def _email_allowlist(value: str) -> tuple[str, ...]:
+    return tuple(
+        dict.fromkeys(
+            item.strip().casefold()
+            for item in value.replace("\n", ",").split(",")
+            if item.strip()
+        )
+    )
+
+
+def _enabled(value: str) -> bool:
+    return value.strip().casefold() in {"1", "true", "yes", "on"}
 
 
 def load_settings(st: Any) -> HostedSettings:
@@ -73,6 +107,22 @@ def load_settings(st: Any) -> HostedSettings:
         _secret_value(st, "arena", "app_url")
         or os.getenv("ARENA_APP_URL", "").strip()
     ).rstrip("/")
+    canary_emails = _email_allowlist(
+        _secret_value(st, "canary", "emails")
+        or os.getenv("ARENA_CANARY_EMAILS", "")
+    )
+    feedback_url = (
+        _secret_value(st, "canary", "feedback_url")
+        or os.getenv("ARENA_FEEDBACK_URL", "")
+    ).strip()
+    incident_email = (
+        _secret_value(st, "canary", "incident_email")
+        or os.getenv("ARENA_INCIDENT_EMAIL", "")
+    ).strip().casefold()
+    allow_local_mode = _enabled(
+        _secret_value(st, "arena", "allow_local_mode")
+        or os.getenv("ARENA_ALLOW_LOCAL_MODE", "false")
+    )
     role = _legacy_jwt_role(key)
     if role == "service_role":
         raise RuntimeError(
@@ -84,6 +134,10 @@ def load_settings(st: Any) -> HostedSettings:
         signing_key=signing.encode("utf-8"),
         github_url=github,
         app_url=app_url,
+        canary_emails=canary_emails,
+        feedback_url=feedback_url,
+        incident_email=incident_email,
+        allow_local_mode=allow_local_mode,
     )
 
 
@@ -320,7 +374,7 @@ def _marketing_page(st: Any, settings: HostedSettings) -> None:
     st.markdown(
         f"""
         <footer class="arena-footer">
-          <span>AI Delivery Arena · Hosted Beta v0.2</span>
+          <span>AI Delivery Arena · Private Canary v0.5</span>
           <span><a href="{_escape(source_root)}/blob/main/PRIVACY.md">Privacy</a>
           · <a href="{_escape(source_root)}/blob/main/TERMS.md">Terms</a>
           · Synthetic scenario · Open source</span>
@@ -331,12 +385,25 @@ def _marketing_page(st: Any, settings: HostedSettings) -> None:
 
 
 def _auth_card(st: Any, settings: HostedSettings) -> None:
+    if not settings.canary_ready:
+        st.markdown(
+            """
+            <div class="access-card-heading">
+              <span class="eyebrow">Private canary</span>
+              <h2>Canary access is closed</h2>
+              <p>Invitation admission, feedback, and incident reporting must all
+              be configured before participant access opens.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
     st.markdown(
         """
         <div class="access-card-heading">
-          <span class="eyebrow">Public beta</span>
+          <span class="eyebrow">Private canary</span>
           <h2>Enter the Arena</h2>
-          <p>Your attempts are private to your account and resume across devices.</p>
+          <p>Invited participants only. Attempts resume across devices.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -358,6 +425,8 @@ def _auth_card(st: Any, settings: HostedSettings) -> None:
         if submitted:
             if not email.strip() or not password:
                 st.error("Enter your email and password.")
+            elif not settings.email_is_invited(email):
+                st.error("This private canary accepts only invited email addresses.")
             else:
                 try:
                     client = _new_supabase_client(settings)
@@ -388,7 +457,7 @@ def _auth_card(st: Any, settings: HostedSettings) -> None:
                 "I understand this beta stores my synthetic simulation responses."
             )
             submitted = st.form_submit_button(
-                "Create free account",
+                "Create invited account",
                 type="primary",
                 use_container_width=True,
             )
@@ -397,6 +466,8 @@ def _auth_card(st: Any, settings: HostedSettings) -> None:
                 st.error("Use a valid email and a password of at least 8 characters.")
             elif not consent:
                 st.error("Confirm the beta data notice before creating an account.")
+            elif not settings.email_is_invited(email):
+                st.error("This email is not on the private canary invitation list.")
             else:
                 try:
                     client = _new_supabase_client(settings)

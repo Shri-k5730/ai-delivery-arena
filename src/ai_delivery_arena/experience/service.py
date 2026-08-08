@@ -41,6 +41,7 @@ from .catalog import (
     custom_fact_template,
     load_decision_catalogue,
 )
+from .development import compare_development
 
 
 class ExperienceError(ValueError):
@@ -249,6 +250,45 @@ class ArenaService:
             if display_name is not None:
                 self.store.set_display_name(run_id, display_name)
             return self._run_view(restored)
+
+    def start_practice_replay(
+        self,
+        source_run_id: str,
+        replay_run_id: str,
+        *,
+        display_name: str | None = None,
+    ) -> dict[str, object]:
+        """Start an uncoached practice replay linked to a frozen first attempt."""
+
+        with self._lock:
+            source = self.store.load(source_run_id)
+            if source.result.status.value != "completed":
+                raise ExperienceError(
+                    "finish the source attempt before starting a corrective replay"
+                )
+            source_context = self.store.get_run_context(source_run_id)
+            if source_context.attempt_kind != "first_attempt":
+                raise ExperienceError(
+                    "start a corrective replay from the frozen first attempt"
+                )
+            replay = self.start_run(
+                replay_run_id,
+                display_name=display_name,
+            )
+            self.store.set_run_context(
+                replay_run_id,
+                attempt_kind="practice_replay",
+                source_run_id=source_run_id,
+            )
+            return {
+                **replay,
+                "attempt_kind": "practice_replay",
+                "source_run_id": source_run_id,
+            }
+
+    def run_context(self, run_id: str) -> dict[str, object]:
+        with self._lock:
+            return self.store.get_run_context(run_id).as_dict()
 
     def get_run(self, run_id: str) -> dict[str, object]:
         with self._lock:
@@ -480,6 +520,28 @@ class ArenaService:
                 raise ExperienceError("finish all 20 decisions before opening the debrief")
             return self.assessor.assess(restored.run_input)
 
+    def replay_comparison(self, replay_run_id: str) -> dict[str, object]:
+        """Compare a completed replay with its immutable source attempt."""
+
+        with self._lock:
+            context = self.store.get_run_context(replay_run_id)
+            if (
+                context.attempt_kind != "practice_replay"
+                or context.source_run_id is None
+            ):
+                raise ExperienceError("this run is not a linked practice replay")
+            replay = self.store.load(replay_run_id)
+            source = self.store.load(context.source_run_id)
+            if replay.result.status.value != "completed":
+                raise ExperienceError(
+                    "finish the practice replay before comparing development"
+                )
+            if source.result.status.value != "completed":
+                raise ExperienceError("the source first attempt is incomplete")
+            source_report = self.assessor.assess(source.run_input).as_dict()
+            replay_report = self.assessor.assess(replay.run_input).as_dict()
+            return compare_development(source_report, replay_report)
+
     def save_draft(
         self,
         run_id: str,
@@ -532,6 +594,20 @@ class ArenaService:
     def rename_run(self, run_id: str, display_name: str) -> None:
         with self._lock:
             self.store.set_display_name(run_id, display_name)
+
+    def delete_run(self, run_id: str) -> None:
+        with self._lock:
+            dependent_replays = [
+                item["display_name"]
+                for item in self.list_runs()
+                if item.get("source_run_id") == run_id
+            ]
+            if dependent_replays:
+                raise ExperienceError(
+                    "delete the linked practice replay before deleting its source "
+                    f"attempt: {', '.join(str(item) for item in dependent_replays)}"
+                )
+            self.store.delete_run(run_id)
 
     @staticmethod
     def _required_text(

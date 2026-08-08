@@ -6,13 +6,13 @@ AI Delivery Arena places a person in charge of a realistic enterprise AI initiat
 
 The Arena does not test whether someone can define RAG, drift, agents, or model evaluation. It tests whether they can apply that knowledge while business value, data quality, governance, cost, delivery pressure, and adoption compete for attention.
 
-> **Current status:** Hosted Beta v0.4 provides a full React and TypeScript product interface on Streamlit Community Cloud, with Supabase authentication, encrypted user-scoped runs, immediate browser draft recovery, and batched cloud synchronization. The dependency-free local Alpha remains supported. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
+> **Current status:** Private Canary v0.6 adds a structured development outcome and linked corrective replays to the v0.5 controlled hosted experience. Every material gap now produces a control, artefact, replay assignment, and observable closure test. Same-scenario correction remains explicitly separate from transfer in a later transformation. The rubric is not independently calibrated, so results are simulation assessments rather than benchmark results.
 
-## Run the Hosted Beta locally
+## Run the Private Canary locally
 
 Requirements: Python 3.11 or later and a Supabase project.
 
-1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql) in the Supabase SQL editor.
+1. Run [`supabase/migrations/202607250001_hosted_beta.sql`](supabase/migrations/202607250001_hosted_beta.sql), [`supabase/migrations/202608030001_private_canary.sql`](supabase/migrations/202608030001_private_canary.sql), and [`supabase/migrations/202608080001_development_replays.sql`](supabase/migrations/202608080001_development_replays.sql) in the Supabase SQL editor. Existing v0.5 projects need only the third migration.
 2. Copy `.streamlit/secrets.example.toml` to `.streamlit/secrets.toml`.
 3. Add the Supabase URL, publishable/anon key, a generated Arena signing key,
    and the Arena application URL.
@@ -57,20 +57,24 @@ python -m unittest discover -s tests -v
 See [`docs/ALPHA.md`](docs/ALPHA.md) for the participant workflow, local storage
 contract, assessment boundary, and troubleshooting.
 
-## v0.4 hosted beta contract
+## v0.6 private canary contract
 
-| Element | v0.4 commitment |
+| Element | v0.6 commitment |
 |---|---|
-| Public entry | Professional product page with sign-in and account creation |
-| Authentication | Supabase email/password authentication |
+| Public entry | Professional product page with invited-participant sign-in and account creation |
+| Authentication | Supabase email/password authentication plus server-side email allowlist |
 | Product UI | React and TypeScript, mounted as a full-page Streamlit Component v2 |
 | Hosted runtime | Streamlit Community Cloud with hidden Streamlit chrome |
 | Cloud persistence | Supabase Postgres with RLS and encrypted canonical saves |
-| Run centre | One-click resume, completed attempts, and local-run import |
+| Run centre | One-click resume, completed attempts, local-run import, and participant-owned deletion |
 | Decision loop | Brief, investigate, draft, review, commit, consequence, continue |
 | Drafts | Immediate browser recovery plus 10-second, one-request cloud autosave until permanent commitment |
 | Completed runs | Replay-verified and immutable |
-| Debrief | Executive summary, gates, scorecard, perspectives, timeline, exports |
+| Debrief | Explicit programme outcome, competency result, gate standing, scorecard, development outcome, timeline, and exports |
+| Development | Every material gap identifies the judgment pattern, corrective control, artefact, replay assignment, and closure evidence |
+| Corrective replay | Separate uncoached run linked to the frozen first attempt; reports practice correction without overwriting the benchmark |
+| Transfer boundary | Practice correction is not treated as competency transfer; a different transformation is still required |
+| Artefact boundary | Corrective artefacts are prescribed for human review; v0.6 does not semantically grade their document quality |
 | Local edition | Existing dependency-free server and `.arena-runs` remain supported |
 | Cost boundary | Designed for Streamlit Community Cloud and Supabase Free limits |
 | Assessment claim | Simulation assessment. Not certification or calibrated benchmark |
@@ -138,12 +142,12 @@ After one complete run, a participant should be able to answer:
 The Arena is built around a simple loop:
 
 ```text
-Decision -> consequence -> debrief -> replay
+Decision -> consequence -> debrief -> corrective artefact -> replay -> transfer test
 ```
 
 During a scored first attempt, the Arena does not tutor the participant, reveal the rubric, recommend the best option, or display live competency scores. It presents observable program signals and stakeholder reactions. Detailed scoring and developmental guidance appear only in the final debrief.
 
-Replays are practice. They must never overwrite or be presented as the original benchmark attempt.
+Replays are practice. They must never overwrite or be presented as the original benchmark attempt. Reading a debrief does not close a gap. A same-scenario replay may establish practice correction, while a later scenario is required to verify transfer.
 
 ### 7. Product principles
 

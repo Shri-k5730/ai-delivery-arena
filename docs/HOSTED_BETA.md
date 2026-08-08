@@ -1,6 +1,6 @@
-# Hosted Beta v0.4
+# Private Canary v0.6
 
-AI Delivery Arena Hosted Beta uses one public Streamlit application and one
+AI Delivery Arena Private Canary uses one public Streamlit application and one
 Supabase project. The deterministic engine, scenario fixtures, scoring rules,
 and local edition remain in the same repository.
 
@@ -41,7 +41,10 @@ their own direct database access during a first attempt.
 Use an existing Supabase project or create a free project.
 
 1. Open **SQL Editor**.
-2. Run `supabase/migrations/202607250001_hosted_beta.sql`.
+2. Run `supabase/migrations/202607250001_hosted_beta.sql` for a new project,
+   then run `supabase/migrations/202608030001_private_canary.sql` and
+   `supabase/migrations/202608080001_development_replays.sql`. Existing v0.5
+   projects need only the third migration.
 3. Open **Authentication → Providers → Email**.
 4. Enable email/password authentication.
 5. Decide whether email confirmation is required.
@@ -51,7 +54,9 @@ Use an existing Supabase project or create a free project.
 
 The migration creates `public.arena_runs`, enables and forces RLS, removes anon
 access, and grants authenticated users access only through owner-scoped
-policies.
+policies. The private-canary migration adds an owner-scoped delete policy. The
+development-replay migration adds plaintext attempt-kind and source-run metadata
+so a replay can be compared without changing either encrypted decision record.
 
 Do not change `save_payload` from encrypted text to JSON.
 
@@ -74,6 +79,12 @@ publishable_key = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY"
 signing_key = "PASTE_THE_GENERATED_SECRET"
 github_url = "https://github.com/YOUR_ACCOUNT/ai-delivery-arena"
 app_url = "https://YOUR-APP.streamlit.app"
+allow_local_mode = false
+
+[canary]
+emails = "participant.one@example.com,participant.two@example.com"
+feedback_url = "https://YOUR-FEEDBACK-FORM"
+incident_email = "arena-incident@example.com"
 ```
 
 Use the publishable key shown by newer Supabase projects or the legacy anon key.
@@ -82,6 +93,15 @@ Never paste the service-role key.
 `app_url` is sent to Supabase as the confirmation-email destination. Supabase
 accepts it only when the same URL is present in Authentication → URL
 Configuration → Redirect URLs.
+
+Both sign-in and sign-up are checked server-side against `canary.emails` after
+case normalization. An existing Supabase account cannot bypass the invitation
+list. Keep `allow_local_mode = false` in Streamlit; the local Alpha is a separate
+single-user process and must not become a hosted access bypass.
+
+The product reports canary configuration as ready only when the allowlist,
+feedback URL, and incident email are all present. The feedback link appears in
+the completed debrief and the incident address appears in the product footer.
 
 Keep the signing key stable. Changing it makes existing encrypted cloud runs
 unreadable. Store an offline copy in a password manager.
@@ -211,6 +231,6 @@ Streamlit storage, so hibernation or redeployment does not lose committed runs.
 
 ## Release boundary
 
-Hosted Beta v0.4 is appropriate for product learning and a controlled canary
-beta. It is not positioned as a production-grade assessment service, a hiring
-decision system, certification, or independently calibrated benchmark.
+Private Canary v0.6 is appropriate for invitation-only product learning. It is
+not positioned as a production-grade assessment service, a hiring decision
+system, certification, or independently calibrated benchmark.

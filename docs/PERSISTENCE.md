@@ -83,6 +83,18 @@ python scripts/checkpoint_reference_run.py \
 
 The default local store is `.arena-runs/`, which is excluded from Git.
 
+## Attempt relationship metadata
+
+First-attempt and practice-replay relationships are deliberately stored outside
+the canonical decision document. Local storage uses the existing participant
+metadata sidecar. Hosted storage uses the owner-scoped `attempt_kind` and
+`source_run_id` columns added in v0.6.
+
+This keeps the encrypted, replay-verified decision record unchanged while making
+the learning relationship explicit. A replay may be deleted independently. A
+source attempt with a linked replay must be retained until the replay is removed,
+otherwise its comparison evidence would become unreadable.
+
 ## Hosted draft buffering
 
 The hosted React cockpit separates fast local recovery from durable cloud
